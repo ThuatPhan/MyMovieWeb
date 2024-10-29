@@ -1,11 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using MyMovieWeb.Application.DTOs.Requests;
+﻿using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MyMovieWeb.Application.Interfaces
 {
@@ -16,5 +10,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<bool>> DeleteMovie(int id);
         Task<Result<MovieDTO>> GetMovieById(int id);
         Task<Result<List<MovieDTO>>> GetAllMovies();
+        Task<Result<int>> GetTotalMovieCount();
+        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize);
     }
 }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -14,12 +9,15 @@ namespace MyMovieWeb.Application.Services
 {
     public class GenreServices : IGenreServices
     {
-        private readonly IRepository<Genre> _genreRepo;
+        private readonly IGenreRepository _genreRepo;
+        private readonly IRepository<Domain.Entities.MovieGenre> _movieGenreRepo;
+
         private readonly IMapper _mapper;
 
-        public GenreServices(IRepository<Genre> genreRepo, IMapper mapper)
+        public GenreServices(IMapper mapper, IGenreRepository genreRepo, IRepository<Domain.Entities.MovieGenre> movieGenreRepo)
         {
             _genreRepo = genreRepo;
+            _movieGenreRepo = movieGenreRepo;
             _mapper = mapper;
         }
 
@@ -50,9 +48,19 @@ namespace MyMovieWeb.Application.Services
 
         }
 
-        public Task<Result<bool>> DeleteGenre(int id)
+        public async Task<Result<bool>> DeleteGenre(int id)
         {
-            throw new NotImplementedException();
+            Genre? genreToDelete = await _genreRepo.GetByIdAsync(id);
+
+            if (genreToDelete is null)
+            {
+                return Result<bool>.Failure($"Genre id {id} not found");
+            }
+
+            await _movieGenreRepo.RemoveRangeAsync(mg => mg.GenreId == id);
+            await _genreRepo.RemoveAsync(genreToDelete);
+
+            return Result<bool>.Success(true, "Genre deleted successfully");
         }
 
         public async Task<Result<GenreDTO>> GetGenreById(int id)
@@ -77,5 +85,18 @@ namespace MyMovieWeb.Application.Services
             return Result<List<GenreDTO>>.Success(genreDTOs, "Genres retrieved successfully");
         }
 
+        public async Task<Result<int>> GetTotalCountGenres()
+        {
+            int totalGenreCount = await _genreRepo.CountAsync();
+            return Result<int>.Success(totalGenreCount, "Total genre count retrieved successfully");
+        }
+
+        public async Task<Result<List<GenreDTO>>> GetPagedGenres(int pageNumber, int pageSize)
+        {
+            IEnumerable<Genre> genres = await _genreRepo.GetPagedGenresAsync(pageNumber, pageSize);
+            List<GenreDTO> genreDTOs = _mapper.Map<List<GenreDTO>>(genres);
+
+            return Result<List<GenreDTO>>.Success(genreDTOs, "Genres retrieved successfully");
+        }
     }
 }

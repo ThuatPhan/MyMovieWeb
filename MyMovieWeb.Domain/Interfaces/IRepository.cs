@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq.Expressions;
 
 namespace MyMovieWeb.Domain.Interfaces
 {
@@ -10,8 +6,11 @@ namespace MyMovieWeb.Domain.Interfaces
     {
         Task<T> AddAsync(T entity);
         Task<T> UpdateAsync(T entity);
-        Task DeleteAsync(T entity);
+        Task RemoveAsync(T entity);
+        Task<int> CountAsync();
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> GetAllAsync();
+        Task RemoveRangeAsync(Expression<Func<T, bool>> predicate);
+        Task<IEnumerable<T>> FindAll(Expression<Func<T, bool>> predicate);
     }
 }
