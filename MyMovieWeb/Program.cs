@@ -46,9 +46,10 @@ builder.Services.AddHttpClient<FileUploadHelper>();
 builder.Services.AddSingleton<FileUploadHelper>();
 builder.Services.AddAutoMapper(typeof(ApplicationMapper));
 
-builder.Services.AddScoped<IRepository<Genre>, Repository<Genre>>();
+builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 builder.Services.AddScoped<IEpisodeRepository, EpisodeRepository>();
+builder.Services.AddScoped<IRepository<MovieGenre>, Repository<MovieGenre>>();
 
 builder.Services.AddScoped<IGenreServices, GenreServices>();
 builder.Services.AddScoped<IMovieService, MovieServices>();

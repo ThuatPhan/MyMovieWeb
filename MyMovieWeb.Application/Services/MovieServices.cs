@@ -10,13 +10,17 @@ namespace MyMovieWeb.Application.Services
 {
     public class MovieServices : IMovieService
     {
-        private readonly IMovieRepository _movieRepo;
-        private readonly FileUploadHelper _uploadHelper;
         private readonly IMapper _mapper;
+        private readonly IGenreRepository _genreRepository;
+        private readonly IMovieRepository _movieRepo;
+        private readonly IEpisodeRepository _episodeRepo;
+        private readonly FileUploadHelper _uploadHelper;
 
-        public MovieServices(IMovieRepository movieRepo, FileUploadHelper uploadHelper, IMapper mapper)
+        public MovieServices(IMapper mapper, IGenreRepository genreRepository, IMovieRepository movieRepo, IEpisodeRepository episodeRepo, FileUploadHelper uploadHelper)
         {
+            _genreRepository = genreRepository;
             _movieRepo = movieRepo;
+            _episodeRepo = episodeRepo;
             _uploadHelper = uploadHelper;
             _mapper = mapper;
         }
@@ -24,6 +28,20 @@ namespace MyMovieWeb.Application.Services
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
         {
             Movie movieToCreate = _mapper.Map<Movie>(movieRequestDTO);
+
+            HashSet<int> existingGenreIds = (await _genreRepository.GetAllAsync())
+                .Select(g => g.Id)
+                .ToHashSet();
+
+            List<MovieGenre> invalidGenres = movieToCreate.MovieGenres
+                .Where(genre => !existingGenreIds.Contains(genre.GenreId))
+                .ToList();
+
+            if (invalidGenres.Any())
+            {
+                String invalidGenreIds = string.Join(", ", invalidGenres.Select(g => g.GenreId));
+                return Result<MovieDTO>.Failure($"Genre id(s) {invalidGenreIds} are not defined");
+            }
 
             string posterUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.PosterFile);
             movieToCreate.PosterUrl = posterUrl;
@@ -46,11 +64,25 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<MovieDTO>> UpdateMovie(int id, UpdateMovieRequestDTO movieRequestDTO)
         {
-            Movie? movieToUpdate = await _movieRepo.GetByIdAsync(id);
+            Movie? movieToUpdate = await _movieRepo.GetByIdIncludeGenresAsync(id);
 
             if (movieToUpdate is null)
             {
                 return Result<MovieDTO>.Failure($"Movie id {id} not found");
+            }
+
+            HashSet<int> existingGenreIds = (await _genreRepository.GetAllAsync())
+                .Select(g => g.Id)
+                .ToHashSet();
+
+            List<MovieGenre> invalidGenres = movieToUpdate.MovieGenres
+                .Where(genre => !existingGenreIds.Contains(genre.GenreId))
+                .ToList();
+
+            if (invalidGenres.Any())
+            {
+                String invalidGenreIds = string.Join(", ", invalidGenres.Select(g => g.GenreId));
+                return Result<MovieDTO>.Failure($"Genre id(s) {invalidGenreIds} are not defined");
             }
 
             if (movieRequestDTO.PosterFile != null)
@@ -71,22 +103,26 @@ namespace MyMovieWeb.Application.Services
                 movieToUpdate.VideoUrl = videoUrl;
             }
 
-            
-            movieToUpdate.MovieGenres.Clear();
-
             _mapper.Map(movieRequestDTO, movieToUpdate);
 
             await _movieRepo.UpdateAsync(movieToUpdate);
-
             Movie? updatedMovie = await _movieRepo.GetByIdIncludeGenresAsync(id);
             MovieDTO movieDTO = _mapper.Map<MovieDTO>(updatedMovie);
 
             return Result<MovieDTO>.Success(movieDTO, "Movie updated successfully");
         }
 
-        public Task<Result<bool>> DeleteMovie(int id)
+        public async Task<Result<bool>> DeleteMovie(int id)
         {
-            throw new NotImplementedException();
+            Movie? movieToDelete = await _movieRepo.GetByIdAsync(id);
+            if (movieToDelete is null)
+            {
+                return Result<bool>.Failure($"Movie id {id} not found");
+            }
+            await _episodeRepo.RemoveRangeAsync(e => e.MovieId == id);
+            await _movieRepo.RemoveAsync(movieToDelete);
+
+            return Result<bool>.Success(true, "Movie deleted successfully");
         }
 
         public async Task<Result<MovieDTO>> GetMovieById(int id)
@@ -108,6 +144,19 @@ namespace MyMovieWeb.Application.Services
             IEnumerable<Movie> movies = await _movieRepo.GetAllIncludeGenresAsync();
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
+
+        public async Task<Result<int>> GetTotalMovieCount()
+        {
+            int totalCount = await _movieRepo.CountAsync();
+            return Result<int>.Success(totalCount, "Total count retrieved successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize)
+        {
+            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize);
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
     }

@@ -1,10 +1,5 @@
 ﻿using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MyMovieWeb.Application.Interfaces
 {
@@ -15,5 +10,8 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<bool>> DeleteGenre(int id);
         Task<Result<GenreDTO>> GetGenreById(int id);
         Task<Result<List<GenreDTO>>> GetAllGenres();
+        Task<Result<int>> GetTotalCountGenres();
+        Task<Result<List<GenreDTO>>> GetPagedGenres(int pageNumber, int pageSize);
+
     }
 }

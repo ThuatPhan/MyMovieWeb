@@ -34,5 +34,23 @@ namespace MyMovieWeb.Infrastructure.Repositories
                 .Include(m => m.Episodes)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<int> GetTotalMovieCountAsync()
+        {
+            return await _dbContext.Movies.CountAsync();
+        }
+
+        public async Task<IEnumerable<Movie>> GetPagedMoviesAsync(int pageNumber, int pageSize)
+        {
+            return await _dbContext
+                 .Movies
+                 .Include(m => m.MovieGenres)
+                 .ThenInclude(mg => mg.Genre)
+                 .Include(m => m.Episodes)
+                 .Skip((pageNumber - 1) * pageSize)
+                 .Take(pageSize)
+                 .ToListAsync();
+        }
+
     }
 }

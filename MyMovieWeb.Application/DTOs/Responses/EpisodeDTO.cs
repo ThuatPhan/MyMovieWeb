@@ -13,8 +13,9 @@ namespace MyMovieWeb.Application.DTOs.Responses
         public string Title { get; set; }
         public string? Description { get; set; }
         public int EpisodeNumber { get; set; }
-        public string videoUrl { get; set; }
+        public string VideoUrl { get; set; }
         public DateTime CreatedDate { get; set; }
         public bool IsShow { get; set; }
+        public int MovieId { get; set; }
     }
 }
