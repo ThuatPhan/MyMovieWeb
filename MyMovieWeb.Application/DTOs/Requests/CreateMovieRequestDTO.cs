@@ -10,7 +10,6 @@ namespace MyMovieWeb.Application.DTOs.Requests
         public required List<string> Actors { get; set; }
         public required List<int> GenreIds { get; set; }
         public bool? IsSeries { get; set; } = false;
-        public bool? IsSeriesCompleted { get; set; }
         public bool? IsShow { get; set; } = true;
         public required IFormFile BannerFile { get; set; }
         public required IFormFile PosterFile { get; set; }

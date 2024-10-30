@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MyMovieWeb.Domain.Entities
+﻿namespace MyMovieWeb.Domain.Entities
 {
     public class Movie
     {
@@ -24,7 +16,7 @@ namespace MyMovieWeb.Domain.Entities
         public int RateCount { get; set; } = 0;
         public int RateTotal { get; set; }
         public bool IsShow { get; set; } = true;
-        public DateTime ReleaseDate { get; set; } = DateTime.Now;
+        public DateTime ReleaseDate { get; set; } = DateTime.UtcNow;
         public ICollection<Episode> Episodes { get; set; }
         public ICollection<MovieGenre> MovieGenres { get; set; } = new List<MovieGenre>();
     }

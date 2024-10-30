@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Domain.Interfaces;
 using MyMovieWeb.Infrastructure.Data;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Infrastructure.Repositories
 {
@@ -27,10 +28,21 @@ namespace MyMovieWeb.Infrastructure.Repositories
             return entity;
         }
 
-        public async Task DeleteAsync(T entity)
+        public async Task RemoveAsync(T entity)
         {
             _dbContext.Set<T>().Remove(entity);
             await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveRangeAsync(Expression<Func<T, bool>> predicate)
+        {
+            var entities = _dbContext.Set<T>().Where(predicate);
+            _dbContext.Set<T>().RemoveRange(entities);
+            await _dbContext.SaveChangesAsync();
+        }
+        public async Task<int> CountAsync()
+        {
+            return await _dbContext.Set<T>().CountAsync();
         }
 
         public async Task<T?> GetByIdAsync(int id)
@@ -41,6 +53,11 @@ namespace MyMovieWeb.Infrastructure.Repositories
         public async Task<IEnumerable<T>> GetAllAsync()
         {
             return await _dbContext.Set<T>().ToListAsync();
+        }
+
+        public async Task<IEnumerable<T>> FindAll(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbContext.Set<T>().Where(predicate).ToListAsync();
         }
     }
 }

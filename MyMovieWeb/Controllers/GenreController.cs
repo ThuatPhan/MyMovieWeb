@@ -66,6 +66,29 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
+        [HttpDelete("{id}")]
+        //[Authorize(Policy = "delete:genre")]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteGenre([FromRoute] int id)
+        {
+            try
+            {
+                Result<bool> result = await _genreServices.DeleteGenre(id);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<bool>.FailureResponse("An error occurred while deleting genre")
+                );
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<GenreDTO>>> GetGenreById([FromRoute] int id)
         {
@@ -104,6 +127,45 @@ namespace MyMovieWeb.Presentation.Controllers
                     ApiResponse<List<GenreDTO>>.FailureResponse("An error occurred while retrieving genres")
                 );
             }
+        }
+
+        [HttpGet("count")]
+        public async Task<ActionResult<ApiResponse<int>>> GetTotalGenreCount()
+        {
+            try
+            {
+                Result<int> result = await _genreServices.CountGenre();
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<GenreDTO>>.FailureResponse("An error occurred while retrieving genres")
+                );
+            }
+        }
+
+        [HttpGet("paged")]
+        public async Task<ActionResult<ApiResponse<List<GenreDTO>>>> GetGenresPaged([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            try
+            {
+                Result<List<GenreDTO>> result = await _genreServices.GetPagedGenres(pageNumber, pageSize);
+
+                return Ok(ApiResponse<List<GenreDTO>>.SuccessResponse(result.Data, result.Message));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<GenreDTO>>.FailureResponse("An error occurred while retrieving genres")
+                );
+            }
+
         }
     }
 }
