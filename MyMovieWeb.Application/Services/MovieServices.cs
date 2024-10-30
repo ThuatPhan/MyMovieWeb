@@ -11,14 +11,14 @@ namespace MyMovieWeb.Application.Services
     public class MovieServices : IMovieService
     {
         private readonly IMapper _mapper;
-        private readonly IGenreRepository _genreRepository;
+        private readonly IGenreRepository _genreRepo;
         private readonly IMovieRepository _movieRepo;
         private readonly IEpisodeRepository _episodeRepo;
         private readonly FileUploadHelper _uploadHelper;
 
         public MovieServices(IMapper mapper, IGenreRepository genreRepository, IMovieRepository movieRepo, IEpisodeRepository episodeRepo, FileUploadHelper uploadHelper)
         {
-            _genreRepository = genreRepository;
+            _genreRepo = genreRepository;
             _movieRepo = movieRepo;
             _episodeRepo = episodeRepo;
             _uploadHelper = uploadHelper;
@@ -29,7 +29,7 @@ namespace MyMovieWeb.Application.Services
         {
             Movie movieToCreate = _mapper.Map<Movie>(movieRequestDTO);
 
-            HashSet<int> existingGenreIds = (await _genreRepository.GetAllAsync())
+            HashSet<int> existingGenreIds = (await _genreRepo.GetAllAsync())
                 .Select(g => g.Id)
                 .ToHashSet();
 
@@ -71,7 +71,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<MovieDTO>.Failure($"Movie id {id} not found");
             }
 
-            HashSet<int> existingGenreIds = (await _genreRepository.GetAllAsync())
+            HashSet<int> existingGenreIds = (await _genreRepo.GetAllAsync())
                 .Select(g => g.Id)
                 .ToHashSet();
 
@@ -125,6 +125,25 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Movie deleted successfully");
         }
 
+        public async Task<Result<int>> CountMovie()
+        {
+            int totalCount = await _movieRepo.CountAsync();
+            return Result<int>.Success(totalCount, "Total count retrieved successfully");
+        }
+
+        public async Task<Result<int>> CountMovieByGenre(int genreId)
+        {
+            Genre? genreOfMovie = await _genreRepo.GetByIdAsync(genreId);
+
+            if (genreOfMovie is null)
+            {
+                return Result<int>.Failure($"Genre id {genreId} not found");
+            }
+
+            int totalCount = await _movieRepo.CountByGenreAsync(genreId);
+            return Result<int>.Success(totalCount, "Total count retrieved successfully");
+        }
+
         public async Task<Result<MovieDTO>> GetMovieById(int id)
         {
             Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(id);
@@ -147,16 +166,25 @@ namespace MyMovieWeb.Application.Services
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
 
-        public async Task<Result<int>> GetTotalMovieCount()
-        {
-            int totalCount = await _movieRepo.CountAsync();
-            return Result<int>.Success(totalCount, "Total count retrieved successfully");
-        }
-
         public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize)
         {
             IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize);
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetPagedMoviesByGenre(int genreId, int pageNumber, int pageSize)
+        {
+            Genre? genreOfMovie = await _genreRepo.GetByIdAsync(genreId);
+
+            if (genreOfMovie is null)
+            {
+                return Result<List<MovieDTO>>.Failure($"Genre id {genreId} not found");
+            }
+
+            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesByGenreAsync(genreId, pageNumber, pageSize);
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
     }

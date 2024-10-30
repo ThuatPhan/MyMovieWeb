@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
@@ -22,6 +23,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
+        [Authorize (Policy = "create:episode")]
         public async Task<ActionResult<ApiResponse<EpisodeDTO>>> CreateEpisode([FromForm] CreateEpisodeRequestDTO episodeRequestDTO)
         {
             try
@@ -46,6 +48,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
+        [Authorize(Policy = "update:episode")]
         public async Task<ActionResult<ApiResponse<EpisodeDTO>>> UpdateEpisode([FromRoute] int id, [FromForm] UpdateEpisodeRequestDTO episodeRequestDTO)
         {
             try
@@ -66,6 +69,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "delete:episode")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteEpisode([FromRoute] int id)
         {
             try
@@ -104,7 +108,7 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("episode-of-movie/{movieId}")]
+        [HttpGet("get-by-movie/{movieId}")]
         public async Task<ActionResult<ApiResponse<List<EpisodeDTO>>>> GetEpisodeOfMovie([FromRoute] int movieId)
         {
             try
@@ -123,12 +127,12 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("get-total-count/{movieId}")]
+        [HttpGet("count-by-movie/{movieId}")]
         public async Task<ActionResult<ApiResponse<int>>> GetTotalEpisodeCount([FromRoute] int movieId)
         {
             try
             {
-                Result<int> result = await _episodeServices.GetTotalEpisodeCount(movieId);
+                Result<int> result = await _episodeServices.CountEpisode(movieId);
                 if (!result.IsSuccess)
                 {
                     return ApiResponse<int>.FailureResponse(result.Message);
@@ -142,12 +146,12 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("episode-of-movie-paged/{movieId}")]
+        [HttpGet("paged-by-movie/{movieId}")]
         public async Task<ActionResult<ApiResponse<List<EpisodeDTO>>>> GetEpisodeOfMoviePaged([FromRoute] int movieId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<EpisodeDTO>> result = await _episodeServices.GetEpisodesOfMoviePaged(movieId, pageNumber, pageSize);
+                Result<List<EpisodeDTO>> result = await _episodeServices.GetPagedEpisodesOfMovie(movieId, pageNumber, pageSize);
                 if (!result.IsSuccess)
                 {
                     return BadRequest(ApiResponse<List<EpisodeDTO>>.FailureResponse(result.Message));

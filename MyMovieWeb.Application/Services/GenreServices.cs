@@ -63,6 +63,12 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Genre deleted successfully");
         }
 
+        public async Task<Result<int>> CountGenre()
+        {
+            int totalGenreCount = await _genreRepo.CountAsync();
+            return Result<int>.Success(totalGenreCount, "Total genre count retrieved successfully");
+        }
+
         public async Task<Result<GenreDTO>> GetGenreById(int id)
         {
             Genre? genre = await _genreRepo.GetByIdAsync(id);
@@ -83,12 +89,6 @@ namespace MyMovieWeb.Application.Services
             List<GenreDTO> genreDTOs = _mapper.Map<List<GenreDTO>>(genres);
 
             return Result<List<GenreDTO>>.Success(genreDTOs, "Genres retrieved successfully");
-        }
-
-        public async Task<Result<int>> GetTotalCountGenres()
-        {
-            int totalGenreCount = await _genreRepo.CountAsync();
-            return Result<int>.Success(totalGenreCount, "Total genre count retrieved successfully");
         }
 
         public async Task<Result<List<GenreDTO>>> GetPagedGenres(int pageNumber, int pageSize)

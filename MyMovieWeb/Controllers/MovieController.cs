@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
-using MyMovieWeb.Application.Services;
 using MyMovieWeb.Presentation.Response;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -23,7 +23,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        //[Authorize(Policy = "create:movie")]
+        [Authorize(Policy = "create:movie")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateMovie([FromForm] CreateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -47,7 +47,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-        //[Authorize(Policy = "update:movie")]
+        [Authorize(Policy = "update:movie")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> UpdateMovie([FromRoute] int id, [FromForm] UpdateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -70,7 +70,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "delete:movie")]
+        [Authorize(Policy = "delete:movie")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteMovie([FromRoute] int id)
         {
             try
@@ -133,12 +133,12 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("get-total-count")]
-        public async Task<ActionResult<ApiResponse<int>>> GetTotalMovieCount()
+        [HttpGet("count")]
+        public async Task<ActionResult<ApiResponse<int>>> GetMovieCount()
         {
             try
             {
-                Result<int> result = await _movieServices.GetTotalMovieCount();
+                Result<int> result = await _movieServices.CountMovie();
                 return ApiResponse<int>.SuccessResponse(result.Data, result.Message);
             }
             catch (Exception ex)
@@ -151,7 +151,7 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("get-paged")]
+        [HttpGet("paged")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPagedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
@@ -170,5 +170,47 @@ namespace MyMovieWeb.Presentation.Controllers
 
         }
 
+        [HttpGet("count-by-genre/{genreId}")]
+        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre([FromRoute] int genreId)
+        {
+            try
+            {
+                Result<int> result = await _movieServices.CountMovieByGenre(genreId);
+
+                if (!result.IsSuccess)
+                {
+                    return NotFound(ApiResponse<int>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<int>.FailureResponse("An error occurred when counting movies")
+                );
+            }
+        }
+
+        [HttpGet("paged-by-genre/{genreId}")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPagedMovies([FromRoute] int genreId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.GetPagedMoviesByGenre(genreId, pageNumber, pageSize);
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
+                );
+            }
+
+        }
     }
 }
