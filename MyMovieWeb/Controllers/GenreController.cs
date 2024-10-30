@@ -129,12 +129,12 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("get-total-count")]
+        [HttpGet("count")]
         public async Task<ActionResult<ApiResponse<int>>> GetTotalGenreCount()
         {
             try
             {
-                Result<int> result = await _genreServices.GetTotalCountGenres();
+                Result<int> result = await _genreServices.CountGenre();
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -147,7 +147,7 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("get-paged")]
+        [HttpGet("paged")]
         public async Task<ActionResult<ApiResponse<List<GenreDTO>>>> GetGenresPaged([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try

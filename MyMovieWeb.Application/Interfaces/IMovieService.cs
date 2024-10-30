@@ -8,9 +8,11 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO);
         Task<Result<MovieDTO>> UpdateMovie(int id, UpdateMovieRequestDTO movieRequestDTO);
         Task<Result<bool>> DeleteMovie(int id);
+        Task<Result<int>> CountMovie();
+        Task<Result<int>> CountMovieByGenre(int genreId);
         Task<Result<MovieDTO>> GetMovieById(int id);
         Task<Result<List<MovieDTO>>> GetAllMovies();
-        Task<Result<int>> GetTotalMovieCount();
         Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedMoviesByGenre(int genreId, int pageNumber, int pageSize);
     }
 }

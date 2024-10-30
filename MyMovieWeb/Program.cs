@@ -50,10 +50,12 @@ builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 builder.Services.AddScoped<IEpisodeRepository, EpisodeRepository>();
 builder.Services.AddScoped<IRepository<MovieGenre>, Repository<MovieGenre>>();
+builder.Services.AddScoped<IWatchHistoryRepository,WatchHistoryRepository>();
 
 builder.Services.AddScoped<IGenreServices, GenreServices>();
 builder.Services.AddScoped<IMovieService, MovieServices>();
 builder.Services.AddScoped<IEpisodeServices, EpisodeServices>();
+builder.Services.AddScoped<IWatchHistoryServices, WatchHistoryServices>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -76,6 +78,12 @@ builder.Services
            )
          );
          options.AddPolicy(
+           "delete:genre",
+           policy => policy.Requirements.Add(
+             new HasScopeRequirement("delete:genre", $"https://{builder.Configuration["Auth0:Domain"]}/")
+           )
+         );
+         options.AddPolicy(
            "create:movie",
            policy => policy.Requirements.Add(
              new HasScopeRequirement("create:movie", $"https://{builder.Configuration["Auth0:Domain"]}/")
@@ -85,6 +93,30 @@ builder.Services
            "update:movie",
            policy => policy.Requirements.Add(
              new HasScopeRequirement("update:movie", $"https://{builder.Configuration["Auth0:Domain"]}/")
+           )
+         );
+         options.AddPolicy(
+           "delete:movie",
+           policy => policy.Requirements.Add(
+             new HasScopeRequirement("delete:movie", $"https://{builder.Configuration["Auth0:Domain"]}/")
+           )
+         );
+         options.AddPolicy(
+           "create:episode",
+           policy => policy.Requirements.Add(
+             new HasScopeRequirement("create:episode", $"https://{builder.Configuration["Auth0:Domain"]}/")
+           )
+         );
+         options.AddPolicy(
+           "update:episode",
+           policy => policy.Requirements.Add(
+             new HasScopeRequirement("update:episode", $"https://{builder.Configuration["Auth0:Domain"]}/")
+           )
+         );
+         options.AddPolicy(
+           "delete:episode",
+           policy => policy.Requirements.Add(
+             new HasScopeRequirement("delete:episode", $"https://{builder.Configuration["Auth0:Domain"]}/")
            )
          );
      });

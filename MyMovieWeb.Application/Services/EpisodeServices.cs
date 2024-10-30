@@ -85,6 +85,25 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Episode deleted successfully");
         }
 
+        public async Task<Result<int>> CountEpisode(int movieId)
+        {
+            Movie? movieOfEpisodes = await _movieRepository.GetByIdAsync(movieId);
+
+            if (movieOfEpisodes is null)
+            {
+                return Result<int>.Failure($"Movie id {movieId} not found");
+            }
+
+            if (!movieOfEpisodes.IsSeries)
+            {
+                return Result<int>.Failure($"Movie id {movieId} is not a series");
+            }
+
+            int totalEpisodeCount = await _episodeRepo.GetTotalEpisodeCountAsync(movieId);
+
+            return Result<int>.Success(totalEpisodeCount, "Total episode count retrieved successfully");
+        }
+
         public async Task<Result<EpisodeDTO>> GetEpisodeById(int id)
         {
             Episode? episode = await _episodeRepo.GetByIdAsync(id);
@@ -118,26 +137,7 @@ namespace MyMovieWeb.Application.Services
             return Result<List<EpisodeDTO>>.Success(episodeDTOs, "Episodes retrieved successfully");
         }
 
-        public async Task<Result<int>> GetTotalEpisodeCount(int movieId)
-        {
-            Movie? movieOfEpisodes = await _movieRepository.GetByIdAsync(movieId);
-
-            if (movieOfEpisodes is null)
-            {
-                return Result<int>.Failure($"Movie id {movieId} not found");
-            }
-
-            if (!movieOfEpisodes.IsSeries)
-            {
-                return Result<int>.Failure($"Movie id {movieId} is not a series");
-            }
-
-            int totalEpisodeCount = await _episodeRepo.GetTotalEpisodeCountAsync(movieId);
-
-            return Result<int>.Success(totalEpisodeCount, "Total episode count retrieved successfully");
-        }
-
-        public async Task<Result<List<EpisodeDTO>>> GetEpisodesOfMoviePaged(int movieId, int pageNumber, int pageSize)
+        public async Task<Result<List<EpisodeDTO>>> GetPagedEpisodesOfMovie(int movieId, int pageNumber, int pageSize)
         {
             Movie? movieOfEpisodes = await _movieRepository.GetByIdAsync(movieId);
 

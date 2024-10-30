@@ -57,7 +57,7 @@ namespace MyMovieWeb.Application.Helper
                     EpisodeNumber = e.EpisodeNumber,
                     Description = e.Description,
                     IsShow = e.IsShow,
-                    CreatedDate = e.CreatedDate,
+                    ReleaseDate = e.ReleaseDate,
                     VideoUrl = e.VideoUrl,
                     MovieId = e.MovieId
                 }).ToList()));
@@ -67,6 +67,13 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<UpdateEpisodeRequestDTO, Episode>()
                 .ForMember(dest => dest.EpisodeNumber, opt => opt.Condition(src => src.EpisodeNumber.HasValue));
             CreateMap<Episode, EpisodeDTO>();
+
+            //Watch History
+            CreateMap<WatchMovieRequestDTO, WatchHistory>()
+                .ForMember(dest => dest.CurrentWatching, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.WatchingAt)));
+
+            CreateMap<WatchEpisodeRequestDTO, WatchHistory>()
+                .ForMember(dest => dest.CurrentWatching, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.WatchingAt)));
         }
 
         private static List<string> SplitActors(string actors)
