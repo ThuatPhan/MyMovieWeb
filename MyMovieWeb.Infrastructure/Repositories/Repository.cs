@@ -28,6 +28,12 @@ namespace MyMovieWeb.Infrastructure.Repositories
             return entity;
         }
 
+        public async Task UpdateRangeAsync(IEnumerable<T> entities)
+        {
+            _dbContext.Set<T>().UpdateRange(entities);
+            await _dbContext.SaveChangesAsync();
+        }
+
         public async Task RemoveAsync(T entity)
         {
             _dbContext.Set<T>().Remove(entity);
@@ -40,6 +46,7 @@ namespace MyMovieWeb.Infrastructure.Repositories
             _dbContext.Set<T>().RemoveRange(entities);
             await _dbContext.SaveChangesAsync();
         }
+
         public async Task<int> CountAsync()
         {
             return await _dbContext.Set<T>().CountAsync();
@@ -55,7 +62,7 @@ namespace MyMovieWeb.Infrastructure.Repositories
             return await _dbContext.Set<T>().ToListAsync();
         }
 
-        public async Task<IEnumerable<T>> FindAll(Expression<Func<T, bool>> predicate)
+        public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbContext.Set<T>().Where(predicate).ToListAsync();
         }

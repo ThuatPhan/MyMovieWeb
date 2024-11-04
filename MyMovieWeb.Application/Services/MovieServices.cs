@@ -13,16 +13,18 @@ namespace MyMovieWeb.Application.Services
         private readonly IMapper _mapper;
         private readonly IGenreRepository _genreRepo;
         private readonly IMovieRepository _movieRepo;
-        private readonly IEpisodeRepository _episodeRepo;
+        private readonly IWatchHistoryRepository _watchHistoryRepo;
+        private readonly IEpisodeServices _episodeServices;
         private readonly FileUploadHelper _uploadHelper;
 
-        public MovieServices(IMapper mapper, IGenreRepository genreRepository, IMovieRepository movieRepo, IEpisodeRepository episodeRepo, FileUploadHelper uploadHelper)
+        public MovieServices(IMapper mapper, IGenreRepository genreRepository, IMovieRepository movieRepo, IWatchHistoryRepository watchHistoryRepo, IEpisodeServices episodeServices, FileUploadHelper uploadHelper)
         {
-            _genreRepo = genreRepository;
-            _movieRepo = movieRepo;
-            _episodeRepo = episodeRepo;
-            _uploadHelper = uploadHelper;
             _mapper = mapper;
+            _uploadHelper = uploadHelper;
+            _movieRepo = movieRepo;
+            _genreRepo = genreRepository;
+            _watchHistoryRepo = watchHistoryRepo;
+            _episodeServices = episodeServices;
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
@@ -75,30 +77,33 @@ namespace MyMovieWeb.Application.Services
                 .Select(g => g.Id)
                 .ToHashSet();
 
-            List<MovieGenre> invalidGenres = movieToUpdate.MovieGenres
-                .Where(genre => !existingGenreIds.Contains(genre.GenreId))
+            List<int> invalidGenres = movieRequestDTO.GenreIds
+                .Where(genreId => !existingGenreIds.Contains(genreId))
                 .ToList();
 
             if (invalidGenres.Any())
             {
-                String invalidGenreIds = string.Join(", ", invalidGenres.Select(g => g.GenreId));
+                string invalidGenreIds = string.Join(", ", invalidGenres.Select(g => g).ToList());
                 return Result<MovieDTO>.Failure($"Genre id(s) {invalidGenreIds} are not defined");
             }
 
             if (movieRequestDTO.PosterFile != null)
             {
+                await _uploadHelper.DeleteImageFileAsync(movieToUpdate.PosterUrl);
                 string posterUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.PosterFile);
                 movieToUpdate.PosterUrl = posterUrl;
             }
 
             if (movieRequestDTO.BannerFile != null)
             {
+                await _uploadHelper.DeleteImageFileAsync(movieToUpdate.BannerUrl);
                 string bannerUrl = await _uploadHelper.UploadVideoAsync(movieRequestDTO.BannerFile);
                 movieToUpdate.BannerUrl = bannerUrl;
             }
 
             if (!movieToUpdate.IsSeries && movieRequestDTO.VideoFile != null)
             {
+                await _uploadHelper.DeleteVideoFileAsync(movieToUpdate.VideoUrl!);
                 string videoUrl = await _uploadHelper.UploadVideoAsync(movieRequestDTO.VideoFile);
                 movieToUpdate.VideoUrl = videoUrl;
             }
@@ -119,7 +124,23 @@ namespace MyMovieWeb.Application.Services
             {
                 return Result<bool>.Failure($"Movie id {id} not found");
             }
-            await _episodeRepo.RemoveRangeAsync(e => e.MovieId == id);
+
+            await _watchHistoryRepo.RemoveRangeAsync(wh => wh.MovieId == id);
+            await _episodeServices.DeleteEpisodeOfMovie(id);
+
+            var deleteTasks = new List<Task>
+            {
+                _uploadHelper.DeleteImageFileAsync(movieToDelete.PosterUrl),
+                _uploadHelper.DeleteImageFileAsync(movieToDelete.BannerUrl)
+            };
+
+            await Task.WhenAll(deleteTasks);
+
+            if (movieToDelete.VideoUrl != null)
+            {
+                await _uploadHelper.DeleteVideoFileAsync(movieToDelete.VideoUrl);
+            }
+
             await _movieRepo.RemoveAsync(movieToDelete);
 
             return Result<bool>.Success(true, "Movie deleted successfully");
@@ -166,9 +187,9 @@ namespace MyMovieWeb.Application.Services
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
 
-        public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize)
+        public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize, bool? isShow = null)
         {
-            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize);
+            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize, isShow);
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
@@ -182,10 +203,46 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<MovieDTO>>.Failure($"Genre id {genreId} not found");
             }
 
-            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesByGenreAsync(genreId, pageNumber, pageSize);
+            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize, m => m.MovieGenres.Any(mg => mg.GenreId == genreId));
+
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
+
+        public async Task<Result<List<MovieDTO>>> GetPagedMoviesSameGenre(int movieId, int pageNumber, int pageSize)
+        {
+            Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(movieId);
+
+            if (movie is null)
+            {
+                return Result<List<MovieDTO>>.Failure($"Movie id {movieId} not found");
+            }
+
+            List<int> genreIds = movie.MovieGenres.Select(mg => mg.GenreId).ToList();
+
+
+            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(
+                pageNumber,
+                pageSize,
+                m => m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId) && m.Id != movieId)
+            );
+
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetPagedMoviesRecentAdded(int pageNumber, int pageSize)
+        {
+
+            IEnumerable<Movie> movies = await _movieRepo.GetPagedRecentAddedMoviesAsync(pageNumber, pageSize);
+
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
+
     }
 }
