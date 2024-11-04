@@ -5,8 +5,10 @@ namespace MyMovieWeb.Application.Interfaces
 {
     public interface IWatchHistoryServices
     {
-        Task<Result<bool>> CreateWatchMovieLog(WatchMovieRequestDTO watchMovieRequest, string userId);
-        Task<Result<bool>> CreateWatchEpisodeLog(WatchEpisodeRequestDTO watchEpisodeRequest, string userId);
-        Task<Result<List<MovieDTO>>> GetUserWatchHistory(string userId);
+        Task<Result<WatchHistoryDTO>> CreateWatchMovieLog(WatchMovieRequestDTO watchMovieRequest, string userId);
+        Task<Result<WatchHistoryDTO>> CreateWatchEpisodeLog(WatchEpisodeRequestDTO watchEpisodeRequest, string userId);
+        Task<Result<List<WatchHistoryDTO>>> UpdateGuestToUserWatchHistory(string guestId, string userId);
+        Task<Result<WatchHistoryDTO>> GetCurrentWatchingTime(string userId, int movieId, int? episodeId = null);
+        Task<Result<List<WatchHistoryDTO>>> GetWatchHistory(string userId);
     }
 }

@@ -23,7 +23,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        [Authorize (Policy = "create:episode")]
+        //[Authorize (Policy = "create:episode")]
         public async Task<ActionResult<ApiResponse<EpisodeDTO>>> CreateEpisode([FromForm] CreateEpisodeRequestDTO episodeRequestDTO)
         {
             try
@@ -48,7 +48,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-        [Authorize(Policy = "update:episode")]
+        //[Authorize(Policy = "update:episode")]
         public async Task<ActionResult<ApiResponse<EpisodeDTO>>> UpdateEpisode([FromRoute] int id, [FromForm] UpdateEpisodeRequestDTO episodeRequestDTO)
         {
             try
@@ -69,7 +69,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "delete:episode")]
+        //[Authorize(Policy = "delete:episode")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteEpisode([FromRoute] int id)
         {
             try

@@ -7,6 +7,7 @@
         public string? Description { get; set; }
         public int EpisodeNumber { get; set; }
         public string VideoUrl { get; set; }
+        public string ThumbnailUrl { get; set; }
         public bool IsShow { get; set; } = true;
         public DateTime ReleaseDate { get; set; } = DateTime.UtcNow;
         public int MovieId { get; set; }
