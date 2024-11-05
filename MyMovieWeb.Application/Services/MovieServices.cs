@@ -244,5 +244,25 @@ namespace MyMovieWeb.Application.Services
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
 
+        public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize)
+        {
+
+            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(pageNumber, pageSize, m => !m.IsSeries);
+
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetPagedTvShows(int pageNumber, int pageSize)
+        {
+
+            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(pageNumber, pageSize, m => m.IsSeries == true);
+
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
+
     }
 }

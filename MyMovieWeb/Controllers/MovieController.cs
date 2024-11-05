@@ -152,7 +152,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("paged")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPagedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
@@ -171,7 +171,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("admin-paged")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPagedMoviesForAdminPage([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesForAdminPage([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
@@ -267,5 +267,42 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+
+        [HttpGet("tv-shows")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTvShows([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.GetPagedTvShows(pageNumber, pageSize);
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
+                );
+            }
+        }
+
+        [HttpGet("movies")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.GetPagedMovies(pageNumber, pageSize);
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
+                );
+            }
+        }
+
     }
 }

@@ -16,5 +16,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> GetPagedMoviesByGenre(int genreId, int pageNumber, int pageSize);
         Task<Result<List<MovieDTO>>> GetPagedMoviesSameGenre(int movieId, int pageNumber, int pageSize);
         Task<Result<List<MovieDTO>>> GetPagedMoviesRecentAdded(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedTvShows(int pageNumber, int pageSize);
     }
 }
