@@ -77,6 +77,40 @@ namespace MyMovieWeb.Application.Helper
                 .ForMember(dest => dest.CurrentWatching, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.WatchingAt)));
 
             CreateMap<WatchHistory, WatchHistoryDTO>();
+
+            //Followed Movie
+            CreateMap<FollowedMovie, FollowedMovieDTO>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Movie.Id))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Movie.Title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Movie.Description))
+                .ForMember(dest => dest.Director, opt => opt.MapFrom(src => src.Movie.Director))
+                .ForMember(dest => dest.Actors, opt => opt.MapFrom(src => SplitActors(src.Movie.Actors)))
+                .ForMember(dest => dest.PosterUrl, opt => opt.MapFrom(src => src.Movie.PosterUrl))
+                .ForMember(dest => dest.BannerUrl, opt => opt.MapFrom(src => src.Movie.BannerUrl))
+                .ForMember(dest => dest.View, opt => opt.MapFrom(src => src.Movie.View))
+                .ForMember(dest => dest.VideoUrl, opt => opt.MapFrom(src => src.Movie.VideoUrl))
+                .ForMember(dest => dest.RateCount, opt => opt.MapFrom(src => src.Movie.RateCount))
+                .ForMember(dest => dest.RateTotal, opt => opt.MapFrom(src => src.Movie.RateTotal))
+                .ForMember(dest => dest.IsSeries, opt => opt.MapFrom(src => src.Movie.IsSeries))
+                .ForMember(dest => dest.IsSeriesCompleted, opt => opt.MapFrom(src => src.Movie.IsSeriesCompleted))
+                .ForMember(dest => dest.Genres, opt => opt.MapFrom(src => src.Movie.MovieGenres.Select(mg => new MovieGenreDTO
+                {
+                    GenreId = mg.GenreId,
+                    GenreName = mg.Genre.Name
+                }).ToList()))
+                .ForMember(dest => dest.Episodes, opt => opt.MapFrom(src => src.Movie.Episodes.Select(e => new EpisodeDTO
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    EpisodeNumber = e.EpisodeNumber,
+                    Description = e.Description,
+                    IsShow = e.IsShow,
+                    ReleaseDate = e.ReleaseDate,
+                    ThumbnailUrl = e.ThumbnailUrl,
+                    VideoUrl = e.VideoUrl,
+                    MovieId = e.MovieId
+                }).ToList()))
+                .ForMember(dest => dest.ReleaseDate, opt => opt.MapFrom(src => src.Movie.ReleaseDate));
         }
 
         private static List<string> SplitActors(string actors)

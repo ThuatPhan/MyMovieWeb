@@ -175,7 +175,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMovies(pageNumber, pageSize);
+                Result<List<MovieDTO>> result = await _movieServices.GetPagedMovies(pageNumber, pageSize, null);
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
