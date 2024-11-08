@@ -23,7 +23,7 @@ namespace MyMovieWeb.Application.Services
             _watchHistoryRepo = watchHistoryRepo;
         }
 
-        public async Task<Result<bool>> CreateWatchMovieLog(WatchMovieRequestDTO watchMovieRequest, string userId)
+        public async Task<Result<WatchHistoryDTO>> CreateWatchMovieLog(WatchMovieRequestDTO watchMovieRequest, string userId)
         {
             WatchHistory watchHistory = _mapper.Map<WatchHistory>(watchMovieRequest);
             watchHistory.UserId = userId;
@@ -32,15 +32,17 @@ namespace MyMovieWeb.Application.Services
 
             if (watchingMovie is null)
             {
-                return Result<bool>.Failure($"Movie id {watchMovieRequest.MovieId} not found");
+                return Result<WatchHistoryDTO>.Failure($"Movie id {watchMovieRequest.MovieId} not found");
             }
 
             await _watchHistoryRepo.AddAsync(watchHistory);
 
-            return Result<bool>.Success(true, "Watch movie log created successfully");
+            WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
+
+            return Result<WatchHistoryDTO>.Success(watchHistoryDTO, "Watch movie log created successfully");
         }
 
-        public async Task<Result<bool>> CreateWatchEpisodeLog(WatchEpisodeRequestDTO watchEpisodeRequest, string userId)
+        public async Task<Result<WatchHistoryDTO>> CreateWatchEpisodeLog(WatchEpisodeRequestDTO watchEpisodeRequest, string userId)
         {
             WatchHistory watchHistory = _mapper.Map<WatchHistory>(watchEpisodeRequest);
             watchHistory.UserId = userId;
@@ -48,38 +50,78 @@ namespace MyMovieWeb.Application.Services
             Movie? watchingMovie = await _movieRepo.GetByIdAsync(watchEpisodeRequest.MovieId);
             if (watchingMovie is null)
             {
-                return Result<bool>.Failure($"Movie id {watchEpisodeRequest.MovieId} not found");
+                return Result<WatchHistoryDTO>.Failure($"Movie id {watchEpisodeRequest.MovieId} not found");
             }
 
             Episode? watchingEpisode = await _episodeRepo.GetByIdAsync(watchEpisodeRequest.EpisodeId);
             if (watchingEpisode is null)
             {
-                return Result<bool>.Failure($"Episode id {watchEpisodeRequest.EpisodeId} not found");
+                return Result<WatchHistoryDTO>.Failure($"Episode id {watchEpisodeRequest.EpisodeId} not found");
             }
 
             await _watchHistoryRepo.AddAsync(watchHistory);
 
-            return Result<bool>.Success(true, "Watch episode log created successfully");
+            WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
+
+            return Result<WatchHistoryDTO>.Success(watchHistoryDTO, "Watch episode log created successfully");
         }
 
-        public async Task<Result<List<MovieDTO>>> GetUserWatchHistory(string userId)
+        public async Task<Result<List<WatchHistoryDTO>>> UpdateGuestToUserWatchHistory(string guestId, string userId)
+        {
+            if (guestId.IsNullOrEmpty())
+            {
+                return Result<List<WatchHistoryDTO>>.Failure("Guest id cannot be empty");
+            }
+            if (userId.IsNullOrEmpty())
+            {
+                return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
+            }
+
+            IEnumerable<WatchHistory> watchHistories = await _watchHistoryRepo.GetUserWatchHistoryAsync(guestId);
+
+            if (!watchHistories.Any())
+            {
+                return Result<List<WatchHistoryDTO>>.Failure($"No histories of guest id {guestId} was found");
+            }
+
+            foreach (var log in watchHistories)
+            {
+                log.UserId = userId;
+            }
+
+            await _watchHistoryRepo.UpdateRangeAsync(watchHistories);
+
+            List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
+
+            return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories updated successfully");
+
+        }
+
+        public async Task<Result<WatchHistoryDTO>> GetCurrentWatchingTime(string userId, int movieId, int? episodeId = null)
+        {
+            WatchHistory? watchHistory = await _watchHistoryRepo.GetCurrentWatchingTimeAsync(userId, movieId, episodeId);
+            if (watchHistory is null)
+            {
+                return Result<WatchHistoryDTO>.Failure("No watch history found for this movie or episode");
+            }
+            WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
+
+            return Result<WatchHistoryDTO>.Success(watchHistoryDTO, "Current watching time retrieved successfully");
+        }
+
+        public async Task<Result<List<WatchHistoryDTO>>> GetWatchHistory(string userId)
         {
             IEnumerable<WatchHistory> watchHistories = await _watchHistoryRepo.GetUserWatchHistoryAsync(userId);
 
             if (userId.IsNullOrEmpty())
             {
-                return Result<List<MovieDTO>>.Failure("User id cannot be empty");
+                return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
             }
 
-            List<int> genreIds = watchHistories
-                .Select(wh => wh.MovieId)
-                .ToList();
+            List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
 
-            IEnumerable<Movie> movies = await _movieRepo.GetByIdsIncludeGenresAsync(genreIds);
+            return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories retrieved successfully");
 
-            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
-
-            return Result<List<MovieDTO>>.Success(movieDTOs, "User watch history retrieved successfully");
         }
 
     }

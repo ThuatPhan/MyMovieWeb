@@ -12,7 +12,11 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<int>> CountMovieByGenre(int genreId);
         Task<Result<MovieDTO>> GetMovieById(int id);
         Task<Result<List<MovieDTO>>> GetAllMovies();
-        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize, bool? isShow = null);
         Task<Result<List<MovieDTO>>> GetPagedMoviesByGenre(int genreId, int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedMoviesSameGenre(int movieId, int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedMoviesRecentAdded(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetPagedTvShows(int pageNumber, int pageSize);
     }
 }

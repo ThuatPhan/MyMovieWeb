@@ -1,15 +1,20 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
 namespace MyMovieWeb.Application.Helper
 {
     public class FileUploadHelper
     {
+        private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
+        private readonly string _serverFileHost;
 
-        public FileUploadHelper(HttpClient httpClient)
+        public FileUploadHelper(IConfiguration configuration, HttpClient httpClient)
         {
+            _configuration = configuration;
             _httpClient = httpClient;
+            _serverFileHost = _configuration["ServerFileHost"]!;
         }
 
         public async Task<string> UploadImageAsync(IFormFile imageFile)
@@ -20,7 +25,7 @@ namespace MyMovieWeb.Application.Helper
 
             imageFormData.Add(imageContent, "image", imageFile.FileName);
 
-            var imageResponse = await _httpClient.PostAsync("http://localhost:3000/upload-image", imageFormData);
+            var imageResponse = await _httpClient.PostAsync($"{_serverFileHost}/upload-image", imageFormData);
 
             if (!imageResponse.IsSuccessStatusCode)
             {
@@ -34,10 +39,8 @@ namespace MyMovieWeb.Application.Helper
             {
                 return imageUrl;
             }
-            else
-            {
-                throw new Exception("Failed to get image url");
-            }
+
+            throw new Exception("Failed to get image url");
         }
 
         public async Task<string> UploadVideoAsync(IFormFile videoFile)
@@ -48,7 +51,7 @@ namespace MyMovieWeb.Application.Helper
 
             videoFormData.Add(videoContent, "video", videoFile.FileName);
 
-            var videoResponse = await _httpClient.PostAsync("http://localhost:3000/upload-video", videoFormData);
+            var videoResponse = await _httpClient.PostAsync($"{_serverFileHost}/upload-video", videoFormData);
 
             if (!videoResponse.IsSuccessStatusCode)
             {
@@ -62,10 +65,30 @@ namespace MyMovieWeb.Application.Helper
             {
                 return videoUrl;
             }
-            else
+
+            throw new Exception("Failed to get video url");
+        }
+
+        public async Task<bool> DeleteImageFileAsync(string imageFilePath)
+        {
+            string fileName = imageFilePath.Substring(imageFilePath.LastIndexOf('/') + 1);
+            var response = await _httpClient.DeleteAsync($"{_serverFileHost}/delete-image/{fileName}");
+            if (response.IsSuccessStatusCode)
             {
-                throw new Exception("Failed to get video url");
+                return true;
             }
+            throw new Exception("Failed to delete image");
+        }
+
+        public async Task<bool> DeleteVideoFileAsync(string videoFilePath)
+        {
+            string fileName = videoFilePath.Substring(videoFilePath.LastIndexOf('/') + 1);
+            var response = await _httpClient.DeleteAsync($"{_serverFileHost}/delete-video/{fileName}");
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            throw new Exception("Failed to delete image");
         }
     }
 }

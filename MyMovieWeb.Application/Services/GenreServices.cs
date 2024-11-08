@@ -10,15 +10,15 @@ namespace MyMovieWeb.Application.Services
     public class GenreServices : IGenreServices
     {
         private readonly IGenreRepository _genreRepo;
-        private readonly IRepository<Domain.Entities.MovieGenre> _movieGenreRepo;
+        private readonly IRepository<MovieGenre> _movieGenreRepo;
 
         private readonly IMapper _mapper;
 
-        public GenreServices(IMapper mapper, IGenreRepository genreRepo, IRepository<Domain.Entities.MovieGenre> movieGenreRepo)
+        public GenreServices(IMapper mapper, IGenreRepository genreRepo, IRepository<MovieGenre> movieGenreRepo)
         {
+            _mapper = mapper;
             _genreRepo = genreRepo;
             _movieGenreRepo = movieGenreRepo;
-            _mapper = mapper;
         }
 
         public async Task<Result<GenreDTO>> CreateGenre(GenreRequestDTO genreRequestDTO)

@@ -2,6 +2,7 @@
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
 using MyMovieWeb.Infrastructure.Data;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Infrastructure.Repositories
 {
@@ -33,46 +34,74 @@ namespace MyMovieWeb.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<Movie>> GetPagedMoviesAsync(int pageNumber, int pageSize)
+        public async Task<IEnumerable<Movie>> GetPagedMoviesAsync(int pageNumber, int pageSize, bool? isShow = null)
         {
-            return await _dbContext.Movies
-                 .Include(m => m.MovieGenres)
-                 .ThenInclude(mg => mg.Genre)
-                 .Include(m => m.Episodes)
-                 .Skip((pageNumber - 1) * pageSize)
-                 .Take(pageSize)
-                 .ToListAsync();
+            var query = _dbContext.Movies
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                .Include(m => m.Episodes)
+                .AsQueryable();
+
+            if (isShow.HasValue)
+            {
+                query = query.Where(m => m.IsShow == isShow.Value);
+            }
+
+            return await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         public async Task<int> CountByGenreAsync(int genreId)
         {
             return await _dbContext.Movies
+               .Where(m => m.IsShow == true)
                .Include(m => m.MovieGenres)
                .ThenInclude(mg => mg.Genre)
                .Where(m => m.MovieGenres.Any(mg => mg.GenreId == genreId))
                .CountAsync();
         }
 
-        public async Task<IEnumerable<Movie>> GetPagedMoviesByGenreAsync(int genreId, int pageNumber, int pageSize)
+        public async Task<IEnumerable<Movie>> GetPagedMoviesAsync(int pageNumber, int pageSize, Expression<Func<Movie, bool>> predicate)
         {
             return await _dbContext.Movies
+                .Where(m => m.IsShow == true)
                 .Include(m => m.MovieGenres)
                 .ThenInclude(mg => mg.Genre)
-                .Where(m => m.MovieGenres.Any(mg => mg.GenreId == genreId))
+                .Where(predicate)
                 .Include(m => m.Episodes)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Movie>> GetByIdsIncludeGenresAsync(List<int> movieIds)
+        public async Task<IEnumerable<Movie>> GetPagedRecentAddedMoviesAsync(int pageNumber, int pageSize)
         {
-            return await _dbContext.Set<Movie>()
-                .Where(m => movieIds.Contains(m.Id))
-                .Include(m => m.MovieGenres)
-                .ThenInclude(mg => mg.Genre)
-                .Include(m => m.Episodes)
-                .ToListAsync();
+            return await _dbContext.Movies
+                 .Where(m => m.IsShow == true)
+                 .Include(m => m.MovieGenres)
+                 .ThenInclude(mg => mg.Genre)
+                 .Include(m => m.Episodes)
+                 .OrderByDescending(m => m.ReleaseDate)
+                 .Skip((pageNumber - 1) * pageSize)
+                 .Take(pageSize)
+                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Movie>> FindAllAsync(int pageNumber, int pageSize, Expression<Func<Movie, bool>> predicate)
+        {
+            return await _dbContext.Movies
+                 .Where(m => m.IsShow == true)
+                 .Include(m => m.MovieGenres)
+                 .ThenInclude(mg => mg.Genre)
+                 .Include(m => m.Episodes)
+                 .Where(predicate)
+                 .OrderByDescending(m => m.ReleaseDate)
+                 .Skip((pageNumber - 1) * pageSize)
+                 .Take(pageSize)
+                 .ToListAsync();
+        }
+
     }
 }
