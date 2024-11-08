@@ -52,12 +52,16 @@ builder.Services.AddScoped<IEpisodeRepository, EpisodeRepository>();
 builder.Services.AddScoped<IRepository<MovieGenre>, Repository<MovieGenre>>();
 builder.Services.AddScoped<IWatchHistoryRepository,WatchHistoryRepository>();
 builder.Services.AddScoped<IFollowedMovieRepository, FollowedMovieRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
 
 builder.Services.AddScoped<IGenreServices, GenreServices>();
 builder.Services.AddScoped<IMovieService, MovieServices>();
 builder.Services.AddScoped<IEpisodeServices, EpisodeServices>();
 builder.Services.AddScoped<IWatchHistoryServices, WatchHistoryServices>();
 builder.Services.AddScoped<IUserServices, UserServices>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
