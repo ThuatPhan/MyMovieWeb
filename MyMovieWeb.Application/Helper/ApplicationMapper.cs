@@ -111,6 +111,10 @@ namespace MyMovieWeb.Application.Helper
                     MovieId = e.MovieId
                 }).ToList()))
                 .ForMember(dest => dest.ReleaseDate, opt => opt.MapFrom(src => src.Movie.ReleaseDate));
+            //Comment
+            CreateMap<CreateMovieCommentRequestDTO, Comment>();
+            CreateMap<CreateEpisodeCommentRequestDTO, Comment>();
+            CreateMap<Comment,CommentDTO>();
         }
 
         private static List<string> SplitActors(string actors)
