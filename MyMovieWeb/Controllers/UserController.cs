@@ -1,6 +1,7 @@
 ﻿ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
+using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Presentation.Response;
