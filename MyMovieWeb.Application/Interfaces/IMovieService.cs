@@ -1,5 +1,7 @@
 ﻿using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
+using MyMovieWeb.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Interfaces
 {
@@ -8,15 +10,9 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO);
         Task<Result<MovieDTO>> UpdateMovie(int id, UpdateMovieRequestDTO movieRequestDTO);
         Task<Result<bool>> DeleteMovie(int id);
-        Task<Result<int>> CountMovie();
-        Task<Result<int>> CountMovieByGenre(int genreId);
+        Task<Result<int>> CountMovieBy(Expression<Func<Movie, bool>> predicate);
         Task<Result<MovieDTO>> GetMovieById(int id);
-        Task<Result<List<MovieDTO>>> GetAllMovies();
-        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize, bool? isShow = null);
-        Task<Result<List<MovieDTO>>> GetPagedMoviesByGenre(int genreId, int pageNumber, int pageSize);
-        Task<Result<List<MovieDTO>>> GetPagedMoviesSameGenre(int movieId, int pageNumber, int pageSize);
-        Task<Result<List<MovieDTO>>> GetPagedMoviesRecentAdded(int pageNumber, int pageSize);
-        Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize);
-        Task<Result<List<MovieDTO>>> GetPagedTvShows(int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> FindAllMovies(int pageNumber, int pageSize, Expression<Func<Movie, bool>> predicate, Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null);
+        Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize);
     }
 }

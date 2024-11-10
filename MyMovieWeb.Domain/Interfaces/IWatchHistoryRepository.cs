@@ -5,6 +5,7 @@ namespace MyMovieWeb.Domain.Interfaces
     public interface IWatchHistoryRepository : IRepository<WatchHistory>
     {
         Task<WatchHistory?> GetCurrentWatchingTimeAsync(string userId, int movieId, int? episodeId = null);
-        Task<IEnumerable<WatchHistory>> GetUserWatchHistoryAsync(string userId);
+        Task<WatchHistory?> GetWatchHistoryAsync(int id, string userId);
+        Task<IEnumerable<WatchHistory>> GetWatchHistoriesAsync(int pageNumber, int pageSize, string userId);
     }
 }

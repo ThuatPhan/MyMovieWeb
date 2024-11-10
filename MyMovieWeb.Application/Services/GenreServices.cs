@@ -91,7 +91,7 @@ namespace MyMovieWeb.Application.Services
             return Result<List<GenreDTO>>.Success(genreDTOs, "Genres retrieved successfully");
         }
 
-        public async Task<Result<List<GenreDTO>>> GetPagedGenres(int pageNumber, int pageSize)
+        public async Task<Result<List<GenreDTO>>> GetAllGenres(int pageNumber, int pageSize)
         {
             IEnumerable<Genre> genres = await _genreRepo.GetPagedGenresAsync(pageNumber, pageSize);
             List<GenreDTO> genreDTOs = _mapper.Map<List<GenreDTO>>(genres);
