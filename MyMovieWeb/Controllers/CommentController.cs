@@ -1,14 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
-using MyMovieWeb.Application;
 using MyMovieWeb.Application.Interfaces;
-using MyMovieWeb.Application.Services;
 using MyMovieWeb.Presentation.Response;
-using AutoMapper;
-using MyMovieWeb.Domain.Entities;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -17,15 +14,17 @@ namespace MyMovieWeb.Presentation.Controllers
     [ApiController]
     public class CommentController : ControllerBase
     {
+        private readonly IMapper _mapper;
         private readonly ILogger<CommentController> _logger;
         private readonly ICommentService _commentService;
-        private readonly IMapper _mapper;
-        public CommentController(ILogger<CommentController> logger,ICommentService commentService,IMapper mapper)
+
+        public CommentController(ILogger<CommentController> logger, ICommentService commentService, IMapper mapper)
         {
             _commentService = commentService;
             _logger = logger;
             _mapper = mapper;
         }
+
         [HttpPost("create-comment")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<CommentDTO>>> CreateMovieComment([FromBody] CreateMovieCommentRequestDTO commentRequestDTO)
@@ -38,7 +37,12 @@ namespace MyMovieWeb.Presentation.Controllers
                 {
                     return BadRequest(ApiResponse<CommentDTO>.FailureResponse(result.Message));
                 }
-                return Ok(ApiResponse<CommentDTO>.SuccessResponse(result.Data, result.Message));
+
+                return CreatedAtAction(
+                    nameof(GetComment),
+                    new { id = result.Data.Id },
+                    ApiResponse<CommentDTO>.SuccessResponse(result.Data, result.Message)
+                );
 
             }
             catch (Exception ex)
@@ -47,6 +51,7 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, "An error occurred when create comment");
             }
         }
+
         [HttpPost("create-episode-comment")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<CommentDTO>>> CreateEpisodeComment([FromBody] CreateEpisodeCommentRequestDTO commentRequestDTO)
@@ -59,8 +64,12 @@ namespace MyMovieWeb.Presentation.Controllers
                 {
                     return BadRequest(ApiResponse<CommentDTO>.FailureResponse(result.Message));
                 }
-                return Ok(ApiResponse<CommentDTO>.SuccessResponse(result.Data, result.Message));
 
+                return CreatedAtAction(
+                    nameof(GetComment),
+                    new { id = result.Data.Id },
+                    ApiResponse<CommentDTO>.SuccessResponse(result.Data, result.Message)
+                );
             }
             catch (Exception ex)
             {
@@ -70,6 +79,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteComment(int id)
         {
             try
@@ -79,12 +89,33 @@ namespace MyMovieWeb.Presentation.Controllers
                 {
                     return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
                 }
+
                 return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(500, "An error occurred when delete comment");
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse<CommentDTO>>> GetComment([FromRoute] int id)
+        {
+            try
+            {
+                Result<CommentDTO> result = await _commentService.GetCommentById(id);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<CommentDTO>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<CommentDTO>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving comment");
             }
         }
 
@@ -98,18 +129,18 @@ namespace MyMovieWeb.Presentation.Controllers
                 {
                     return BadRequest(ApiResponse<List<CommentDTO>>.FailureResponse(result.Message));
                 }
-                return Ok(ApiResponse<List<CommentDTO>>.SuccessResponse(result.Data,result.Message));
+
+                return Ok(ApiResponse<List<CommentDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when get comment");
+                return StatusCode(500, "An error occurred when get comments of movie");
             }
         }
 
-        // Lấy tất cả bình luận cho một tập phim cụ thể trong phim
         [HttpGet("movie/{movieId}/episode/{episodeId}")]
-        public async Task<ActionResult<ApiResponse<List<CommentDTO>>>> GetCommentsEpisode([FromRoute] int movieId,[FromRoute] int episodeId)
+        public async Task<ActionResult<ApiResponse<List<CommentDTO>>>> GetCommentsEpisode([FromRoute] int movieId, [FromRoute] int episodeId)
         {
             try
             {
@@ -118,14 +149,14 @@ namespace MyMovieWeb.Presentation.Controllers
                 {
                     return BadRequest(ApiResponse<List<CommentDTO>>.FailureResponse(result.Message));
                 }
-                return Ok(ApiResponse<List<CommentDTO>>.SuccessResponse(result.Data,result.Message));
+                return Ok(ApiResponse<List<CommentDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when get comment of episode");
+                return StatusCode(500, "An error occurred when get comments of episode");
             }
         }
-        }
     }
+}
 

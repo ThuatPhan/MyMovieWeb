@@ -47,9 +47,14 @@ namespace MyMovieWeb.Infrastructure.Repositories
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<int> CountAsync()
+        public async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)
         {
-            return await _dbContext.Set<T>().CountAsync();
+            IQueryable<T> query = _dbContext.Set<T>();
+            if (predicate != null)
+            {
+                query = query.Where(predicate);
+            }
+            return await query.CountAsync();
         }
 
         public async Task<T?> GetByIdAsync(int id)

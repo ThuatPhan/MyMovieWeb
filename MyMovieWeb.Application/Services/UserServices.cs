@@ -34,12 +34,6 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Movie followed successfully");
         }
 
-        public async Task<Result<int>> CountFollowedMovie(string userId)
-        {
-            int count = await _followedMovieRepo.CountByUserIdAsync(userId);
-            return Result<int>.Success(count, "Count followed movie successfully");
-        }
-
         public async Task<Result<List<FollowedMovieDTO>>> GetFollowedMovies(string userId)
         {
             IEnumerable<FollowedMovie> followedMovies = await _followedMovieRepo.GetByUserIdIncludeMovie(userId);

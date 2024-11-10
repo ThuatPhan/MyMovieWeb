@@ -19,14 +19,14 @@ namespace MyMovieWeb.Infrastructure.Repositories
             return await _dbContext.Set<WatchHistory>()
                  .Where(wh => wh.UserId == userId && wh.MovieId == movieId && wh.EpisodeId == episodeId)
                  .GroupBy(wh => wh.MovieId)
-                 .Select(wh => wh.OrderByDescending(wh => wh.LogDate).First())
+                 .Select(wh => wh.OrderByDescending(wh => wh.CurrentWatching).First())
                  .FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<WatchHistory>> GetUserWatchHistoryAsync(string userId)
+        public async Task<WatchHistory?> GetWatchHistoryAsync(int id, string userId)
         {
             return await _dbContext.Set<WatchHistory>()
-                .Where(wh => wh.UserId == userId)
+                .Where(wh => wh.Id == id && wh.UserId == userId)
                 .Include(wh => wh.Movie)
                     .ThenInclude(m => m.MovieGenres)
                     .ThenInclude(mg => mg.Genre)
@@ -34,6 +34,20 @@ namespace MyMovieWeb.Infrastructure.Repositories
                     .ThenInclude(m => m.Episodes)
                 .GroupBy(wh => wh.MovieId)
                 .Select(wh => wh.OrderByDescending(wh => wh.LogDate).First())
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<WatchHistory>> GetWatchHistoriesAsync(int pageNumber, int pageSize, string userId)
+        {
+            return await _dbContext.Set<WatchHistory>()
+                .Where(wh => wh.UserId == userId)
+                .Include(wh => wh.Movie)
+                    .ThenInclude(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                .GroupBy(wh => wh.MovieId)
+                .Select(wh => wh.OrderByDescending(wh => wh.LogDate).First())
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
     }

@@ -44,24 +44,6 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("count-followed-movie")]
-        [Authorize]
-        public async Task<ActionResult<ApiResponse<int>>> CountFollowedMovies()
-        {
-            try
-            {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                Result<int> result = await _userServices.CountFollowedMovie(userId);
-
-                return Ok(ApiResponse<int>.SuccessResponse(result.Data, userId));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when counting followed movie");
-            }
-        }
-
         [HttpGet("followed-movies")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> GetFollowedMovies()
