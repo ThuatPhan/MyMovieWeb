@@ -34,6 +34,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<WatchHistoryDTO>.Failure(result.Message);
             }
 
+            await _movieServices.IncreaseView(result.Data.Id, 1);
             await _watchHistoryRepo.AddAsync(watchHistory);
 
             WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
@@ -58,6 +59,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<WatchHistoryDTO>.Failure(episodeResult.Message);
             }
 
+            await _movieServices.IncreaseView(movieResult.Data.Id, 1);
             await _watchHistoryRepo.AddAsync(watchHistory);
 
             WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
