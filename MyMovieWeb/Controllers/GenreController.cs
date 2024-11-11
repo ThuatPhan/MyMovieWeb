@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
@@ -21,7 +22,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Policy = "create:genre")]
+        [Authorize(Policy = "create:genre")]
         public async Task<ActionResult<ApiResponse<GenreDTO>>> CreateGenre([FromBody] GenreRequestDTO genreRequestDTO)
         {
             try
@@ -44,7 +45,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPut("{id}")]
-        //[Authorize(Policy = "update:genre")]
+        [Authorize(Policy = "update:genre")]
         public async Task<ActionResult<ApiResponse<GenreDTO>>> UpdateGenre([FromRoute] int id, [FromBody] GenreRequestDTO genreRequestDTO)
         {
             try
@@ -67,7 +68,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "delete:genre")]
+        [Authorize(Policy = "delete:genre")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteGenre([FromRoute] int id)
         {
             try
@@ -152,10 +153,8 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<List<GenreDTO>> result = await _genreServices.GetPagedGenres(pageNumber, pageSize);
-
+                Result<List<GenreDTO>> result = await _genreServices.GetAllGenres(pageNumber, pageSize);
                 return Ok(ApiResponse<List<GenreDTO>>.SuccessResponse(result.Data, result.Message));
-
             }
             catch (Exception ex)
             {

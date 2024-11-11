@@ -14,7 +14,7 @@
         public string? VideoUrl { get; set; }
         public int View { get; set; } = 0;
         public int RateCount { get; set; } = 0;
-        public int RateTotal { get; set; }
+        public int RateTotal { get; set; } = 0;
         public bool IsShow { get; set; } = true;
         public DateTime ReleaseDate { get; set; } = DateTime.UtcNow;
         public ICollection<Episode> Episodes { get; set; }

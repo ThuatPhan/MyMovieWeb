@@ -12,7 +12,6 @@
         public List<MovieGenreDTO> Genres { get; set; }
         public bool IsSeries { get; set; }
         public bool? IsSeriesCompleted { get; set; }
-        public List<EpisodeDTO> Episodes { get; set; }
         public string? VideoUrl { get; set; }
         public int View { get; set; }
         public int RateCount { get; set; }

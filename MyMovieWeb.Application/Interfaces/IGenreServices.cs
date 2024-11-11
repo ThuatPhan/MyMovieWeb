@@ -11,6 +11,6 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<int>> CountGenre();
         Task<Result<GenreDTO>> GetGenreById(int id);
         Task<Result<List<GenreDTO>>> GetAllGenres();
-        Task<Result<List<GenreDTO>>> GetPagedGenres(int pageNumber, int pageSize);
+        Task<Result<List<GenreDTO>>> GetAllGenres(int pageNumber, int pageSize);
     }
 }

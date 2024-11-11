@@ -23,7 +23,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        //[Authorize(Policy = "create:movie")]
+        [Authorize(Policy = "create:movie")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateMovie([FromForm] CreateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -47,7 +47,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-        //[Authorize(Policy = "update:movie")]
+        [Authorize(Policy = "update:movie")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> UpdateMovie([FromRoute] int id, [FromForm] UpdateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -70,7 +70,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "delete:movie")]
+        [Authorize(Policy = "delete:movie")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteMovie([FromRoute] int id)
         {
             try
@@ -116,11 +116,17 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies()
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize,
+            [FromQuery] bool includeHiddenMovie)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetAllMovies();
+                Result<List<MovieDTO>> result = includeHiddenMovie
+                    ? await _movieServices.FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title))
+                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow == true, m => m.OrderBy(m => m.Title));
+
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -131,14 +137,18 @@ namespace MyMovieWeb.Presentation.Controllers
                     ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
                 );
             }
+
         }
 
         [HttpGet("count")]
-        public async Task<ActionResult<ApiResponse<int>>> GetMovieCount()
+        public async Task<ActionResult<ApiResponse<int>>> GetMovieCount([FromQuery] bool includeHiddenMovie)
         {
             try
             {
-                Result<int> result = await _movieServices.CountMovie();
+                Result<int> result = includeHiddenMovie
+                    ? await _movieServices.CountMovieBy(_ => true)
+                    : await _movieServices.CountMovieBy(m => m.IsShow == true);
+
                 return ApiResponse<int>.SuccessResponse(result.Data, result.Message);
             }
             catch (Exception ex)
@@ -151,50 +161,14 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("paged")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        [HttpGet("count-by-genre")]
+        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre([FromQuery] int genreId, [FromQuery] bool includeHiddenMovie)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMovies(pageNumber, pageSize, true);
-                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
-                );
-            }
-
-        }
-
-        [HttpGet("admin-paged")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesForAdminPage([FromQuery] int pageNumber, [FromQuery] int pageSize)
-        {
-            try
-            {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMovies(pageNumber, pageSize, null);
-                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
-                );
-            }
-
-        }
-
-        [HttpGet("count-by-genre/{genreId}")]
-        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre([FromRoute] int genreId)
-        {
-            try
-            {
-                Result<int> result = await _movieServices.CountMovieByGenre(genreId);
+                Result<int> result = includeHiddenMovie
+                    ? await _movieServices.CountMovieBy(m => m.MovieGenres.Any(mg => mg.GenreId == genreId))
+                    : await _movieServices.CountMovieBy(m => m.IsShow == true && m.MovieGenres.Any(mg => mg.GenreId == genreId));
 
                 if (!result.IsSuccess)
                 {
@@ -213,12 +187,17 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("get-by-genre/{genreId}")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesByGenre([FromRoute] int genreId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
+        [HttpGet("get-by-genre")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesByGenre(
+            [FromQuery] int genreId,
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMoviesByGenre(genreId, pageNumber, pageSize);
+                Result<List<MovieDTO>> result = await _movieServices
+                    .FindAllMovies(pageNumber, pageSize, m => m.MovieGenres.Any(mg => mg.GenreId == genreId), m => m.OrderBy(m => m.Title));
+
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -233,11 +212,14 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("get-same-genre")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesSameGenre([FromQuery] int movieId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesSameGenre(
+            [FromQuery] int movieId,
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMoviesSameGenre(movieId, pageNumber, pageSize);
+                Result<List<MovieDTO>> result = await _movieServices.GetMoviesSameGenreOfMovie(movieId, pageNumber, pageSize);
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -251,11 +233,15 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("recent-added")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecentAddedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecentAddedMovies(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMoviesRecentAdded(pageNumber, pageSize);
+                Result<List<MovieDTO>> result = await _movieServices
+                    .FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title).OrderByDescending(m => m.ReleaseDate));
+
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -269,11 +255,15 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("tv-shows")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTvShows([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTvShows(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedTvShows(pageNumber, pageSize);
+                Result<List<MovieDTO>> result = await _movieServices
+                    .FindAllMovies(pageNumber, pageSize, m => m.IsSeries, m => m.OrderBy(m => m.Title));
+
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -287,11 +277,15 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("movies")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices.GetPagedMovies(pageNumber, pageSize);
+                Result<List<MovieDTO>> result = await _movieServices
+                    .FindAllMovies(pageNumber, pageSize, m => !m.IsSeries, m => m.OrderBy(m => m.Title));
+
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)

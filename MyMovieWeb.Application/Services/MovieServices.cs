@@ -5,6 +5,7 @@ using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Services
 {
@@ -146,22 +147,9 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Movie deleted successfully");
         }
 
-        public async Task<Result<int>> CountMovie()
+        public async Task<Result<int>> CountMovieBy(Expression<Func<Movie, bool>> predicate)
         {
-            int totalCount = await _movieRepo.CountAsync();
-            return Result<int>.Success(totalCount, "Total count retrieved successfully");
-        }
-
-        public async Task<Result<int>> CountMovieByGenre(int genreId)
-        {
-            Genre? genreOfMovie = await _genreRepo.GetByIdAsync(genreId);
-
-            if (genreOfMovie is null)
-            {
-                return Result<int>.Failure($"Genre id {genreId} not found");
-            }
-
-            int totalCount = await _movieRepo.CountByGenreAsync(genreId);
+            int totalCount = await _movieRepo.CountAsync(predicate);
             return Result<int>.Success(totalCount, "Total count retrieved successfully");
         }
 
@@ -179,41 +167,22 @@ namespace MyMovieWeb.Application.Services
             return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
         }
 
-        public async Task<Result<List<MovieDTO>>> GetAllMovies()
+        public async Task<Result<List<MovieDTO>>> FindAllMovies(
+            int pageNumber,
+            int pageSize,
+            Expression<Func<Movie, bool>> predicate,
+            Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null)
         {
-            IEnumerable<Movie> movies = await _movieRepo.GetAllIncludeGenresAsync();
-            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
-
-            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
-        }
-
-        public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize, bool? isShow = null)
-        {
-            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize, isShow);
-            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
-            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
-        }
-
-        public async Task<Result<List<MovieDTO>>> GetPagedMoviesByGenre(int genreId, int pageNumber, int pageSize)
-        {
-            Genre? genreOfMovie = await _genreRepo.GetByIdAsync(genreId);
-
-            if (genreOfMovie is null)
-            {
-                return Result<List<MovieDTO>>.Failure($"Genre id {genreId} not found");
-            }
-
-            IEnumerable<Movie> movies = await _movieRepo.GetPagedMoviesAsync(pageNumber, pageSize, m => m.MovieGenres.Any(mg => mg.GenreId == genreId));
+            IEnumerable<Movie> movies = await _movieRepo.FindAllIncludeGenresAsync(pageNumber, pageSize, predicate, orderBy);
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
 
-        public async Task<Result<List<MovieDTO>>> GetPagedMoviesSameGenre(int movieId, int pageNumber, int pageSize)
+        public async Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize)
         {
             Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(movieId);
-
             if (movie is null)
             {
                 return Result<List<MovieDTO>>.Failure($"Movie id {movieId} not found");
@@ -221,48 +190,28 @@ namespace MyMovieWeb.Application.Services
 
             List<int> genreIds = movie.MovieGenres.Select(mg => mg.GenreId).ToList();
 
-
-            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(
+            IEnumerable<Movie> movies = await _movieRepo.FindAllIncludeGenresAsync(
                 pageNumber,
                 pageSize,
-                m => m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId) && m.Id != movieId)
+                m => m.Id != movieId && m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId))
             );
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
-
         }
 
-        public async Task<Result<List<MovieDTO>>> GetPagedMoviesRecentAdded(int pageNumber, int pageSize)
+        public async Task<Result<bool>> IncreaseView(int id, int view)
         {
+            Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(id);
+            if (movie is null)
+            {
+                return Result<bool>.Failure($"Movie id {id} not found");
+            }
+            movie.View += view;
+            await _movieRepo.UpdateAsync(movie);
 
-            IEnumerable<Movie> movies = await _movieRepo.GetPagedRecentAddedMoviesAsync(pageNumber, pageSize);
-
-            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
-
-            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+            return Result<bool>.Success(true, "Increase view for movie successfully");
         }
-
-        public async Task<Result<List<MovieDTO>>> GetPagedMovies(int pageNumber, int pageSize)
-        {
-
-            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(pageNumber, pageSize, m => !m.IsSeries);
-
-            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
-
-            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
-        }
-
-        public async Task<Result<List<MovieDTO>>> GetPagedTvShows(int pageNumber, int pageSize)
-        {
-
-            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(pageNumber, pageSize, m => m.IsSeries == true);
-
-            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
-
-            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
-        }
-
     }
 }

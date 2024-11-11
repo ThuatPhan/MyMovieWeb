@@ -22,10 +22,7 @@ namespace MyMovieWeb.Application.Helper
                 })))
                 .BeforeMap((src, dest) =>
                 {
-                    if (src.IsSeries.HasValue)
-                    {
-                        dest.IsSeriesCompleted = src.IsSeries.Value ? false : null;
-                    }
+                    dest.IsSeriesCompleted = src.IsSeries ? false : null;
                 });
 
             CreateMap<UpdateMovieRequestDTO, Movie>()
@@ -37,6 +34,10 @@ namespace MyMovieWeb.Application.Helper
                 .ForMember(dest => dest.IsSeriesCompleted, opt => opt.Condition(src => src.IsSeriesCompleted.HasValue))
                 .BeforeMap((src, dest) =>
                 {
+                    if (src.IsSeriesCompleted.HasValue)
+                    {
+                        dest.IsSeriesCompleted = src.IsSeriesCompleted;
+                    }
                     if (dest.IsSeries == true)
                     {
                         dest.IsSeries = true;
@@ -49,18 +50,6 @@ namespace MyMovieWeb.Application.Helper
                 {
                     GenreId = mg.GenreId,
                     GenreName = mg.Genre.Name
-                }).ToList()))
-                .ForMember(dest => dest.Episodes, opt => opt.MapFrom(src => src.Episodes.Select(e => new EpisodeDTO
-                {
-                    Id = e.Id,
-                    Title = e.Title,
-                    EpisodeNumber = e.EpisodeNumber,
-                    Description = e.Description,
-                    IsShow = e.IsShow,
-                    ReleaseDate = e.ReleaseDate,
-                    ThumbnailUrl = e.ThumbnailUrl,
-                    VideoUrl = e.VideoUrl,
-                    MovieId = e.MovieId
                 }).ToList()));
 
             //Episode
@@ -76,7 +65,8 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<WatchEpisodeRequestDTO, WatchHistory>()
                 .ForMember(dest => dest.CurrentWatching, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.WatchingAt)));
 
-            CreateMap<WatchHistory, WatchHistoryDTO>();
+            CreateMap<WatchHistory, WatchHistoryDTO>()
+                .ForMember(dest => dest.Episodes, opt => opt.MapFrom(src => src.Movie.Episodes));
 
             //Followed Movie
             CreateMap<FollowedMovie, FollowedMovieDTO>()
@@ -111,6 +101,7 @@ namespace MyMovieWeb.Application.Helper
                     MovieId = e.MovieId
                 }).ToList()))
                 .ForMember(dest => dest.ReleaseDate, opt => opt.MapFrom(src => src.Movie.ReleaseDate));
+
             //Comment
             CreateMap<CreateMovieCommentRequestDTO, Comment>();
             CreateMap<CreateEpisodeCommentRequestDTO, Comment>();

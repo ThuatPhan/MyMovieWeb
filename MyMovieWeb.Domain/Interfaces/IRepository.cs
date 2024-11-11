@@ -8,10 +8,10 @@ namespace MyMovieWeb.Domain.Interfaces
         Task<T> UpdateAsync(T entity);
         Task UpdateRangeAsync(IEnumerable<T> entities);
         Task RemoveAsync(T entity);
-        Task<int> CountAsync();
+        Task RemoveRangeAsync(Expression<Func<T, bool>> predicate);
+        Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> GetAllAsync();
-        Task RemoveRangeAsync(Expression<Func<T, bool>> predicate);
         Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> predicate);
     }
 }

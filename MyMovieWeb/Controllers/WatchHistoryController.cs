@@ -22,8 +22,10 @@ namespace MyMovieWeb.Presentation.Controllers
             _watchHistoryService = watchHistoryService;
         }
 
-        [HttpPost("guest-log/movie")]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchMovieLog([FromBody] WatchMovieRequestDTO watchMovieRequest, [FromQuery] string userId)
+        [HttpPost("guest/create-log/movie")]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchMovieLog(
+            [FromBody] WatchMovieRequestDTO watchMovieRequest,
+            [FromQuery] string userId)
         {
             try
             {
@@ -44,8 +46,10 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpPost("guest-log/episode")]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchEpisodeLog([FromBody] WatchEpisodeRequestDTO watchMovieRequest, [FromQuery] string userId)
+        [HttpPost("guest/create-log/episode")]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchEpisodeLog(
+            [FromBody] WatchEpisodeRequestDTO watchMovieRequest,
+            [FromQuery] string userId)
         {
             try
             {
@@ -66,7 +70,7 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpPost("user-log/movie")]
+        [HttpPost("user/create-log/movie")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchMovieLog([FromBody] WatchMovieRequestDTO watchMovieRequest)
         {
@@ -91,7 +95,7 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpPost("user-log/episode")]
+        [HttpPost("user/create-log/episode")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchEpisodeLog([FromBody] WatchEpisodeRequestDTO watchMovieRequest)
         {
@@ -116,7 +120,7 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpPut("sync-to-user-log")]
+        [HttpPut("sync-log")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> UpdateGuestToUserWatchHistory([FromBody] string guestId)
         {
@@ -140,8 +144,11 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("guest-current-watching-time")]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime([FromQuery] string userId, [FromQuery] int movieId, [FromQuery] int? episodeId = null)
+        [HttpGet("guest/current-watching-time")]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime(
+            [FromQuery] string userId,
+            [FromQuery] int movieId,
+            [FromQuery] int? episodeId = null)
         {
             try
             {
@@ -160,12 +167,35 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("guest-logs")]
-        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetGuestWatchHistory([FromQuery] string guestId)
+        [HttpGet("guest/log")]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetWatchHistory([FromQuery] int id, [FromQuery] string userId)
         {
             try
             {
-                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistory(guestId);
+                Result<WatchHistoryDTO> result = await _watchHistoryService.GetWatchHistory(id, userId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<WatchHistoryDTO>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<WatchHistoryDTO>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retriving watch history");
+            }
+        }
+
+        [HttpGet("guest/logs")]
+        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
+            [FromQuery] string guestId,
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
+        {
+            try
+            {
+                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, guestId);
 
                 if (!result.IsSuccess)
                 {
@@ -181,9 +211,11 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("user-current-watching-time")]
+        [HttpGet("user/current-watching-time")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime([FromQuery] int movieId, [FromQuery] int? episodeId = null)
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime(
+            [FromQuery] int movieId,
+            [FromQuery] int? episodeId = null)
         {
             try
             {
@@ -204,15 +236,40 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("user-logs")]
+        [HttpGet("user/log")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistory()
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetWatchHistory([FromQuery] int id)
         {
             try
             {
                 string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
-                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistory(userId);
+                Result<WatchHistoryDTO> result = await _watchHistoryService.GetWatchHistory(id, userId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<WatchHistoryDTO>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<WatchHistoryDTO>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retriving watch history");
+            }
+        }
+
+        [HttpGet("user/logs")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize)
+        {
+            try
+            {
+                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+
+                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, userId);
 
                 if (!result.IsSuccess)
                 {
