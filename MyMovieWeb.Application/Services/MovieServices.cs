@@ -168,8 +168,8 @@ namespace MyMovieWeb.Application.Services
         }
 
         public async Task<Result<List<MovieDTO>>> FindAllMovies(
-            int pageNumber, 
-            int pageSize, 
+            int pageNumber,
+            int pageSize,
             Expression<Func<Movie, bool>> predicate,
             Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null)
         {
@@ -199,6 +199,19 @@ namespace MyMovieWeb.Application.Services
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
+
+        public async Task<Result<bool>> IncreaseView(int id, int view)
+        {
+            Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(id);
+            if (movie is null)
+            {
+                return Result<bool>.Failure($"Movie id {id} not found");
+            }
+            movie.View += view;
+            await _movieRepo.UpdateAsync(movie);
+
+            return Result<bool>.Success(true, "Increase view for movie successfully");
         }
     }
 }
