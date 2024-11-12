@@ -18,7 +18,7 @@ namespace MyMovieWeb.Presentation.Controllers
         private readonly ILogger<CommentController> _logger;
         private readonly ICommentService _commentService;
 
-        public CommentController(ILogger<CommentController> logger, ICommentService commentService, IMapper mapper)
+        public CommentController(ILogger<CommentController> logger, IMapper mapper, ICommentService commentService)
         {
             _commentService = commentService;
             _logger = logger;
@@ -32,6 +32,7 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+
                 Result<CommentDTO> result = await _commentService.CreateMovieComment(commentRequestDTO, userId);
                 if (!result.IsSuccess)
                 {
