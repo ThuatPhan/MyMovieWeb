@@ -45,6 +45,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
 builder.Services.AddHttpClient<FileUploadHelper>();
 builder.Services.AddSingleton<FileUploadHelper>();
 builder.Services.AddAutoMapper(typeof(ApplicationMapper));
+builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
@@ -54,7 +55,7 @@ builder.Services.AddScoped<IWatchHistoryRepository,WatchHistoryRepository>();
 builder.Services.AddScoped<IFollowedMovieRepository, FollowedMovieRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 
-
+builder.Services.AddScoped<IAuth0Services, Auth0Services>();
 builder.Services.AddScoped<IGenreServices, GenreServices>();
 builder.Services.AddScoped<IMovieService, MovieServices>();
 builder.Services.AddScoped<IEpisodeServices, EpisodeServices>();
