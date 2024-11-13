@@ -298,5 +298,27 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
+        [HttpPost("create-rate")]
+        public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateRate([FromBody] CreateRateMovieRequestDTO rateMovieRequestDTO)
+        {
+            try
+            {
+                Result<MovieDTO> result = await _movieServices.CreateRating(rateMovieRequestDTO);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<CommentDTO>.FailureResponse(result.Message));
+                }
+                return CreatedAtAction(
+                    nameof(GetMovieById),
+                    new { id = result.Data.Id },
+                    ApiResponse<MovieDTO>.SuccessResponse(result.Data, result.Message)
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when create rate movie");
+            }
+        }
     }
 }
