@@ -36,7 +36,8 @@ namespace MyMovieWeb.Infrastructure.Repositories
             int pageNumber,
             int pageSize,
             Expression<Func<Movie, bool>> predicate,
-            Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null)
+            Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null
+        )
         {
             IQueryable<Movie> query = _dbContext.Movies
                 .Where(m => m.IsShow == true)

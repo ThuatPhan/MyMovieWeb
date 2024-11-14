@@ -120,12 +120,35 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("movie/{movieId}")]
-        public async Task<ActionResult<ApiResponse<List<CommentDTO>>>> GetCommentsOfMovie([FromRoute] int movieId)
+        [HttpGet("count/movie/{movieId}")]
+        public async Task<ActionResult<ApiResponse<int>>> GetCommentsCountOfMovie([FromRoute] int movieId)
         {
             try
             {
-                Result<List<CommentDTO>> result = await _commentService.GetCommentsOfMovie(movieId);
+                Result<int> result = await _commentService.CountCommentOfMovie(movieId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<int>.FailureResponse(result.Message));
+                }
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when get comments count of movie");
+            }
+        }
+
+        [HttpGet("movie/{movieId}")]
+        public async Task<ActionResult<ApiResponse<List<CommentDTO>>>> GetCommentsOfMovie(
+            [FromRoute] int movieId, 
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Result<List<CommentDTO>> result = await _commentService.GetCommentsOfMovie(movieId, pageNumber, pageSize);
                 if (!result.IsSuccess)
                 {
                     return BadRequest(ApiResponse<List<CommentDTO>>.FailureResponse(result.Message));
@@ -140,12 +163,37 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("movie/{movieId}/episode/{episodeId}")]
-        public async Task<ActionResult<ApiResponse<List<CommentDTO>>>> GetCommentsEpisode([FromRoute] int movieId, [FromRoute] int episodeId)
+        [HttpGet("count/movie/{movieId}/episode/{episodeId}")]
+        public async Task<ActionResult<ApiResponse<int>>> GetCommentsCountOfEpisode([FromRoute] int movieId, [FromRoute] int episodeId)
         {
             try
             {
-                Result<List<CommentDTO>> result = await _commentService.GetCommentsOfEpisode(movieId, episodeId);
+                Result<int> result = await _commentService.CountCommentOfEpisode(movieId, episodeId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<int>.FailureResponse(result.Message));
+                }
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when get comments count of episode");
+            }
+        }
+
+        [HttpGet("movie/{movieId}/episode/{episodeId}")]
+        public async Task<ActionResult<ApiResponse<List<CommentDTO>>>> GetCommentsEpisode(
+            [FromRoute] int movieId, 
+            [FromRoute] int episodeId, 
+            [FromQuery] int pageNumber, 
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Thread.Sleep(1000);
+                Result<List<CommentDTO>> result = await _commentService.GetCommentsOfEpisode(movieId, episodeId, pageNumber, pageSize);
                 if (!result.IsSuccess)
                 {
                     return BadRequest(ApiResponse<List<CommentDTO>>.FailureResponse(result.Message));

@@ -36,10 +36,14 @@ namespace MyMovieWeb.Application.Services
             newComment.UserId = userId;
 
             Comment createdComment = await _commentRepo.AddAsync(newComment);
-
             CommentDTO commentDTO = _mapper.Map<CommentDTO>(createdComment);
-            var user = await _auth0Services.GetUser(userId);
-            commentDTO.User = user!;
+
+            Result<Auth0UserDTO> userResult = await _auth0Services.GetUser(userId);
+            if (!userResult.IsSuccess)
+            {
+                return Result<CommentDTO>.Failure(result.Message);
+            }
+            commentDTO.User = userResult.Data;
 
             return Result<CommentDTO>.Success(commentDTO, "Comment created successfully");
         }
@@ -48,7 +52,7 @@ namespace MyMovieWeb.Application.Services
         {
             Result<MovieDTO> movieResult = await _movieServics.GetMovieById(commentRequestDTO.MovieId);
             Result<EpisodeDTO> episodeResult = await _episodeServices.GetEpisodeById(commentRequestDTO.EpisodeId);
-            if(!movieResult.IsSuccess)
+            if (!movieResult.IsSuccess)
             {
                 return Result<CommentDTO>.Failure(movieResult.Message);
             }
@@ -62,6 +66,14 @@ namespace MyMovieWeb.Application.Services
 
             Comment createdComment = await _commentRepo.AddAsync(newComment);
             CommentDTO commentDTO = _mapper.Map<CommentDTO>(createdComment);
+
+            Result<Auth0UserDTO> userResult = await _auth0Services.GetUser(userId);
+            if (!userResult.IsSuccess)
+            {
+                return Result<CommentDTO>.Failure(userResult.Message);
+            }
+
+            commentDTO.User = userResult.Data;
 
             return Result<CommentDTO>.Success(commentDTO, "Comment created successfully");
         }
@@ -93,28 +105,64 @@ namespace MyMovieWeb.Application.Services
 
         }
 
-        public async Task<Result<List<CommentDTO>>> GetCommentsOfMovie(int movieId)
+        public async Task<Result<int>> CountCommentOfMovie(int movieId)
         {
             Result<MovieDTO> result = await _movieServics.GetMovieById(movieId);
-            if(!result.IsSuccess)
+            if (!result.IsSuccess)
+            {
+                return Result<int>.Failure(result.Message);
+            } 
+
+            int commentCount = await _commentRepo.CountAsync(c => c.MovieId == movieId);
+            return Result<int>.Success(commentCount, "Comment count retrieved successfully");
+        }
+
+        public async Task<Result<int>> CountCommentOfEpisode(int movieId, int episodeId)
+        {
+            Result<MovieDTO> movieResult = await _movieServics.GetMovieById(movieId);
+            if (!movieResult.IsSuccess)
+            {
+                return Result<int>.Failure(movieResult.Message);
+            }
+
+            Result<EpisodeDTO> episodeResult = await _episodeServices.GetEpisodeById(episodeId);
+            if (!episodeResult.IsSuccess)
+            {
+                return Result<int>.Failure(episodeResult.Message);
+            }
+
+            int commentCount = await _commentRepo.CountAsync(c => c.MovieId == movieId && c.EpisodeId == episodeId);
+            return Result<int>.Success(commentCount, "Comment count retrieved successfully");
+        }
+
+        public async Task<Result<List<CommentDTO>>> GetCommentsOfMovie(int movieId, int pageNumber, int pageSize)
+        {
+            Result<MovieDTO> result = await _movieServics.GetMovieById(movieId);
+            if (!result.IsSuccess)
             {
                 return Result<List<CommentDTO>>.Failure(result.Message);
             }
 
-            IEnumerable<Comment> comments = await _commentRepo.GetCommentsByMovieIdAsync(movieId);
+            IEnumerable<Comment> comments = await _commentRepo
+                .FindAllAsync(pageNumber, pageSize, c => c.MovieId == movieId, c => c.OrderByDescending(c => c.CreatedDate));
 
             List<CommentDTO> commentDTOs = _mapper.Map<List<CommentDTO>>(comments);
-            List<Auth0UserDTO>? users = await _auth0Services.GetAllUsers();
+
+            Result<List<Auth0UserDTO>> usersResult = await _auth0Services.GetAllUsers();
+            if (!usersResult.IsSuccess)
+            {
+                return Result<List<CommentDTO>>.Failure(usersResult.Message);
+            }
 
             foreach (var commentDTO in commentDTOs)
             {
-                commentDTO.User = users.SingleOrDefault(u => u.UserId == commentDTO.UserId);
+                commentDTO.User = usersResult.Data.SingleOrDefault(u => u.UserId == commentDTO.UserId);
             }
 
             return Result<List<CommentDTO>>.Success(commentDTOs, "Comments retrieved successfully");
         }
 
-        public async Task<Result<List<CommentDTO>>> GetCommentsOfEpisode(int movieId, int episodeId)
+        public async Task<Result<List<CommentDTO>>> GetCommentsOfEpisode(int movieId, int episodeId, int pageNumber, int pageSize)
         {
             Result<MovieDTO> movieResult = await _movieServics.GetMovieById(movieId);
             Result<EpisodeDTO> episodeResult = await _episodeServices.GetEpisodeById(episodeId);
@@ -127,8 +175,21 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<CommentDTO>>.Failure(episodeResult.Message);
             }
 
-            IEnumerable<Comment> comments = await _commentRepo.GetCommentsByEpisodeIdAsync(movieId, episodeId);
+            IEnumerable<Comment> comments = await _commentRepo
+                .FindAllAsync(pageNumber, pageSize, c => c.MovieId == movieId && c.EpisodeId == episodeId, c => c.OrderByDescending(c => c.CreatedDate));
+
             List<CommentDTO> commentDTOs = _mapper.Map<List<CommentDTO>>(comments);
+
+            Result<List<Auth0UserDTO>> usersResult = await _auth0Services.GetAllUsers();
+            if (!usersResult.IsSuccess)
+            {
+                return Result<List<CommentDTO>>.Failure(usersResult.Message);
+            }
+
+            foreach (var commentDTO in commentDTOs)
+            {
+                commentDTO.User = usersResult.Data.SingleOrDefault(u => u.UserId == commentDTO.UserId);
+            }
 
             return Result<List<CommentDTO>>.Success(commentDTOs, "Comments retrieved successfully");
         }
