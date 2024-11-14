@@ -9,5 +9,9 @@
         public int? EpisodeId { get; set; }
         public Movie Movie { get; set; }
         public Episode Episode { get; set; }
+        public DateTime CreatedDate { get; set; } = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow, 
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+        );
     }
 }

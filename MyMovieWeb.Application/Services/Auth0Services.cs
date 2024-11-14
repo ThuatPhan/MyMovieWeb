@@ -20,7 +20,7 @@ namespace MyMovieWeb.Application.Services
             _memoryCache = memoryCache;
         }
 
-        public async Task<string?> GetAccessToken()
+        public async Task<Result<string>> GetAccessToken()
         {
             string? clientId = _configuration["Auth0Management:ClientId"];
             string? clientSecret = _configuration["Auth0Management:ClientSecret"];
@@ -42,24 +42,31 @@ namespace MyMovieWeb.Application.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception("Failed to get auth0 access token");
+                return Result<string>.Failure("Failed to get auth0 access token");
             }
 
             string? responseData = await response.Content.ReadAsStringAsync();
 
             var tokenResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseData);
 
-            return tokenResponse["access_token"];
+            return Result<string>.Success(tokenResponse["access_token"], "Token retrieved successfully");
         }
 
-        public async Task<Auth0UserDTO?> GetUser(string userId)
+        public async Task<Result<Auth0UserDTO>> GetUser(string userId)
         {
             if (_memoryCache.TryGetValue($"Auth0User_{userId}", out Auth0UserDTO? cachedUser))
             {
-                return cachedUser;
+                return Result<Auth0UserDTO>.Success(cachedUser, "User ");
             }
-            string accessToken = await GetAccessToken();
+
+            Result<string> result = await GetAccessToken();
+            if (!result.IsSuccess)
+            {
+                return Result<Auth0UserDTO>.Failure(result.Message);
+            }
+
             string requestUrl = $"{_configuration["Auth0Management:Audience"]}users/{userId}";
+            string accessToken = result.Data;
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl)
             {
@@ -79,18 +86,25 @@ namespace MyMovieWeb.Application.Services
 
             _memoryCache.Set($"Auth0User_{userId}", user, TimeSpan.FromHours(1));
 
-            return user;
+            return Result<Auth0UserDTO>.Success(user, "User retrived successfully");
         }
 
 
-        public async Task<List<Auth0UserDTO>?> GetAllUsers()
+        public async Task<Result<List<Auth0UserDTO>>> GetAllUsers()
         {
             if (_memoryCache.TryGetValue("Auth0Users", out List<Auth0UserDTO>? cachedUsers))
             {
-                return cachedUsers;
+                return Result<List<Auth0UserDTO>>.Success(cachedUsers, "Users retrieved successfully");
             }
-            string accessToken = await GetAccessToken();
+
+            Result<string> result = await GetAccessToken();
+            if (!result.IsSuccess)
+            {
+                return Result<List<Auth0UserDTO>>.Failure(result.Message);
+            }
+
             string requestUrl = $"{_configuration["Auth0Management:Audience"]}users";
+            string accessToken = result.Data;
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl)
             {
@@ -110,7 +124,7 @@ namespace MyMovieWeb.Application.Services
 
             _memoryCache.Set("Auth0Users", users, TimeSpan.FromHours(1));
 
-            return users;
+            return Result<List<Auth0UserDTO>>.Success(users, "Users retrived successfully");
         }
 
     }

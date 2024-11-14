@@ -8,9 +8,11 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<CommentDTO>> CreateMovieComment(CreateMovieCommentRequestDTO commentRequestDTO, string userId);
         Task<Result<CommentDTO>> CreateEpisodeComment(CreateEpisodeCommentRequestDTO commentRequestDTO, string userId);
         Task<Result<bool>> DeleteComment(int id);
+        Task<Result<int>> CountCommentOfMovie(int movieId);
+        Task<Result<int>> CountCommentOfEpisode(int movieId, int episodeId);
         Task<Result<CommentDTO>> GetCommentById(int id);
-        Task<Result<List<CommentDTO>>> GetCommentsOfMovie(int movieId);
-        Task<Result<List<CommentDTO>>> GetCommentsOfEpisode(int movieId, int episodeId);
+        Task<Result<List<CommentDTO>>> GetCommentsOfMovie(int movieId, int pageNumber, int pageSize);
+        Task<Result<List<CommentDTO>>> GetCommentsOfEpisode(int movieId, int episodeId, int pageNumber, int pageSize);
 
     }
 }
