@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.Extensions.Logging;
+using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
@@ -40,6 +42,16 @@ namespace MyMovieWeb.Application.Services
             List<FollowedMovieDTO> followedMovieDTOs = _mapper.Map<List<FollowedMovieDTO>>(followedMovies);
 
             return Result<List<FollowedMovieDTO>>.Success(followedMovieDTOs, "Followed movies retrieved successfully");
+        }
+
+        public async Task<Result<bool>> RateMovie(CreateRateMovieRequestDTO rateMovieRequestDTO)
+        {
+            Result<bool> result = await _movieService.CreateRate(rateMovieRequestDTO);
+            if (!result.IsSuccess)
+            {
+                return Result<bool>.Failure(result.Message);
+            }
+            return Result<bool>.Success(result.Data, result.Message);
         }
     }
 }

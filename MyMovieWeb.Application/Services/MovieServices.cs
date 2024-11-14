@@ -203,7 +203,7 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<bool>> IncreaseView(int id, int view)
         {
-            Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(id);
+            Movie? movie = await _movieRepo.GetByIdAsync(id);
             if (movie is null)
             {
                 return Result<bool>.Failure($"Movie id {id} not found");
@@ -214,21 +214,19 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Increase view for movie successfully");
         }
 
-        public async Task<Result<MovieDTO>> CreateRating(CreateRateMovieRequestDTO rateMovieRequestDTO)
+        public async Task<Result<bool>> CreateRate(CreateRateMovieRequestDTO rateMovieRequestDTO)
         {
-            Movie? movie = await _movieRepo.GetByIdAsync(rateMovieRequestDTO.Id);
-            if (movie is null)
+            Movie? movieToRate = await _movieRepo.GetByIdAsync(rateMovieRequestDTO.MovieId);
+            if (movieToRate is null)
             {
-                return Result<MovieDTO>.Failure("Movie not found");
+                return Result<bool>.Failure($"Movie id {rateMovieRequestDTO.MovieId} not found");
             }
-            movie.RateCount += 1;
-            movie.RateTotal += rateMovieRequestDTO.RateTotal;
+            movieToRate.RateCount += 1;
+            movieToRate.RateTotal = rateMovieRequestDTO.RateTotal;
 
-            Movie createMovie = await _movieRepo.UpdateAsync(movie);
+            await _movieRepo.UpdateAsync(movieToRate);
 
-            MovieDTO movieDTO = _mapper.Map<MovieDTO>(createMovie);
-            return Result<MovieDTO>.Success(movieDTO, "Rating created movie successfully");
+            return Result<bool>.Success(true, "Rate created successfully");
         }
-
     }
 }
