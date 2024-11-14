@@ -119,7 +119,8 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies(
             [FromQuery] int pageNumber,
             [FromQuery] int pageSize,
-            [FromQuery] bool includeHiddenMovie)
+            [FromQuery] bool includeHiddenMovie
+        )
         {
             try
             {
@@ -162,7 +163,10 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("count-by-genre")]
-        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre([FromQuery] int genreId, [FromQuery] bool includeHiddenMovie)
+        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre(
+            [FromQuery] int genreId, 
+            [FromQuery] bool includeHiddenMovie
+        )
         {
             try
             {
@@ -191,7 +195,8 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesByGenre(
             [FromQuery] int genreId,
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -215,7 +220,8 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesSameGenre(
             [FromQuery] int movieId,
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -235,7 +241,8 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("recent-added")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecentAddedMovies(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -257,7 +264,8 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("tv-shows")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTvShows(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -279,7 +287,8 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("movies")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -295,29 +304,6 @@ namespace MyMovieWeb.Presentation.Controllers
                     StatusCodes.Status500InternalServerError,
                     ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
                 );
-            }
-        }
-
-        [HttpPost("create-rate")]
-        public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateRate([FromBody] CreateRateMovieRequestDTO rateMovieRequestDTO)
-        {
-            try
-            {
-                Result<MovieDTO> result = await _movieServices.CreateRating(rateMovieRequestDTO);
-                if (!result.IsSuccess)
-                {
-                    return BadRequest(ApiResponse<CommentDTO>.FailureResponse(result.Message));
-                }
-                return CreatedAtAction(
-                    nameof(GetMovieById),
-                    new { id = result.Data.Id },
-                    ApiResponse<MovieDTO>.SuccessResponse(result.Data, result.Message)
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when create rate movie");
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿ using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
@@ -59,6 +59,27 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(500, "An error occurred when retrieving followed movie");
+            }
+        }
+
+        [HttpPost("rate-movie")]
+        public async Task<ActionResult<ApiResponse<bool>>> RateMovie([FromBody] CreateRateMovieRequestDTO rateMovieRequestDTO)
+        {
+            try
+            {
+                Result<bool> result = await _userServices.RateMovie(rateMovieRequestDTO);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when rating movie");
             }
         }
     }
