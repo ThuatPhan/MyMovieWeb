@@ -13,6 +13,10 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<GenreRequestDTO, Genre>();
             CreateMap<Genre, GenreDTO>();
 
+            //Rate
+            CreateMap<CreateMovieRequestDTO, Movie>();
+            CreateMap<Movie, MovieDTO>();
+
             //Movie
             CreateMap<CreateMovieRequestDTO, Movie>()
                 .ForMember(dest => dest.Actors, opt => opt.MapFrom(src => string.Join(",", src.Actors)))

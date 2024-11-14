@@ -213,5 +213,22 @@ namespace MyMovieWeb.Application.Services
 
             return Result<bool>.Success(true, "Increase view for movie successfully");
         }
+
+        public async Task<Result<MovieDTO>> CreateRating(CreateRateMovieRequestDTO rateMovieRequestDTO)
+        {
+            Movie? movie = await _movieRepo.GetByIdAsync(rateMovieRequestDTO.Id);
+            if (movie is null)
+            {
+                return Result<MovieDTO>.Failure("Movie not found");
+            }
+            movie.RateCount += 1;
+            movie.RateTotal += rateMovieRequestDTO.RateTotal;
+
+            Movie createMovie = await _movieRepo.UpdateAsync(movie);
+
+            MovieDTO movieDTO = _mapper.Map<MovieDTO>(createMovie);
+            return Result<MovieDTO>.Success(movieDTO, "Rating created movie successfully");
+        }
+
     }
 }
