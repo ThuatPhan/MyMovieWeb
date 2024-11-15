@@ -14,17 +14,30 @@ namespace MyMovieWeb.Application.Services
         private readonly IMapper _mapper;
         private readonly IGenreRepository _genreRepo;
         private readonly IMovieRepository _movieRepo;
+        private readonly ICommentRepository _commentRepo;
+        private readonly IFollowedMovieRepository _followedMovieRepo;
         private readonly IWatchHistoryRepository _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
         private readonly FileUploadHelper _uploadHelper;
 
-        public MovieServices(IMapper mapper, IGenreRepository genreRepository, IMovieRepository movieRepo, IWatchHistoryRepository watchHistoryRepo, IEpisodeServices episodeServices, FileUploadHelper uploadHelper)
+        public MovieServices(
+            IMapper mapper, 
+            IGenreRepository genreRepository,
+            IMovieRepository movieRepo, 
+            ICommentRepository commentRepository,
+            IFollowedMovieRepository followedMovieRepository,
+            IWatchHistoryRepository watchHistoryRepository, 
+            IEpisodeServices episodeServices, 
+            FileUploadHelper uploadHelper
+        )
         {
             _mapper = mapper;
             _uploadHelper = uploadHelper;
-            _movieRepo = movieRepo;
             _genreRepo = genreRepository;
-            _watchHistoryRepo = watchHistoryRepo;
+            _movieRepo = movieRepo;
+            _commentRepo = commentRepository;
+            _followedMovieRepo = followedMovieRepository;
+            _watchHistoryRepo = watchHistoryRepository;
             _episodeServices = episodeServices;
         }
 
@@ -126,16 +139,21 @@ namespace MyMovieWeb.Application.Services
                 return Result<bool>.Failure($"Movie id {id} not found");
             }
 
-            await _watchHistoryRepo.RemoveRangeAsync(wh => wh.MovieId == id);
+            var deleteDataTasks = Task.WhenAll(
+                _commentRepo.RemoveRangeAsync(wh => wh.MovieId == id),
+                _watchHistoryRepo.RemoveRangeAsync(wh => wh.MovieId == id),
+                _followedMovieRepo.RemoveRangeAsync(wh => wh.MovieId == id)
+            );
+
             await _episodeServices.DeleteEpisodeOfMovie(id);
 
-            var deleteTasks = new List<Task>
-            {
+            var deleteFileTasks = Task.WhenAll(
                 _uploadHelper.DeleteImageFileAsync(movieToDelete.PosterUrl),
                 _uploadHelper.DeleteImageFileAsync(movieToDelete.BannerUrl)
-            };
+            );
 
-            await Task.WhenAll(deleteTasks);
+            await deleteDataTasks;
+            await deleteFileTasks;
 
             if (movieToDelete.VideoUrl != null)
             {
@@ -171,7 +189,8 @@ namespace MyMovieWeb.Application.Services
             int pageNumber,
             int pageSize,
             Expression<Func<Movie, bool>> predicate,
-            Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null)
+            Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null
+        )
         {
             IEnumerable<Movie> movies = await _movieRepo.FindAllIncludeGenresAsync(pageNumber, pageSize, predicate, orderBy);
 
@@ -193,7 +212,7 @@ namespace MyMovieWeb.Application.Services
             IEnumerable<Movie> movies = await _movieRepo.FindAllIncludeGenresAsync(
                 pageNumber,
                 pageSize,
-                m => m.Id != movieId && m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId))
+                m => m.Id != movieId && m.IsShow == true && m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId))
             );
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
@@ -222,7 +241,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<bool>.Failure($"Movie id {rateMovieRequestDTO.MovieId} not found");
             }
             movieToRate.RateCount += 1;
-            movieToRate.RateTotal = rateMovieRequestDTO.RateTotal;
+            movieToRate.RateTotal += rateMovieRequestDTO.RateTotal;
 
             await _movieRepo.UpdateAsync(movieToRate);
 

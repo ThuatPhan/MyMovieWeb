@@ -19,17 +19,9 @@ namespace MyMovieWeb.Infrastructure.Repositories
         {
             return await _dbContext.Movies
                 .Where(m => m.Id == id)
-                .Include(m => m.MovieGenres)
+                .Include(m => m.MovieGenres.Where(mg => mg.Genre.IsShow))
                 .ThenInclude(mg => mg.Genre)
                 .FirstOrDefaultAsync();
-        }
-
-        public async Task<IEnumerable<Movie>> GetAllIncludeGenresAsync()
-        {
-            return await _dbContext.Movies
-                 .Include(m => m.MovieGenres)
-                 .ThenInclude(mg => mg.Genre)
-                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Movie>> FindAllIncludeGenresAsync(
@@ -40,8 +32,7 @@ namespace MyMovieWeb.Infrastructure.Repositories
         )
         {
             IQueryable<Movie> query = _dbContext.Movies
-                .Where(m => m.IsShow == true)
-                .Include(m => m.MovieGenres)
+                .Include(m => m.MovieGenres.Where(mg => mg.Genre.IsShow))
                 .ThenInclude(mg => mg.Genre)
                 .Where(predicate);
 

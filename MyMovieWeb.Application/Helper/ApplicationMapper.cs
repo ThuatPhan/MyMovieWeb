@@ -42,10 +42,7 @@ namespace MyMovieWeb.Application.Helper
                     {
                         dest.IsSeriesCompleted = src.IsSeriesCompleted;
                     }
-                    if (dest.IsSeries == true)
-                    {
-                        dest.IsSeries = true;
-                    }
+                    dest.IsSeries = dest.IsSeries ? true : false;
                 });
 
             CreateMap<Movie, MovieDTO>()
@@ -92,24 +89,12 @@ namespace MyMovieWeb.Application.Helper
                     GenreId = mg.GenreId,
                     GenreName = mg.Genre.Name
                 }).ToList()))
-                .ForMember(dest => dest.Episodes, opt => opt.MapFrom(src => src.Movie.Episodes.Select(e => new EpisodeDTO
-                {
-                    Id = e.Id,
-                    Title = e.Title,
-                    EpisodeNumber = e.EpisodeNumber,
-                    Description = e.Description,
-                    IsShow = e.IsShow,
-                    ReleaseDate = e.ReleaseDate,
-                    ThumbnailUrl = e.ThumbnailUrl,
-                    VideoUrl = e.VideoUrl,
-                    MovieId = e.MovieId
-                }).ToList()))
                 .ForMember(dest => dest.ReleaseDate, opt => opt.MapFrom(src => src.Movie.ReleaseDate));
 
             //Comment
             CreateMap<CreateMovieCommentRequestDTO, Comment>();
             CreateMap<CreateEpisodeCommentRequestDTO, Comment>();
-            CreateMap<Comment,CommentDTO>();
+            CreateMap<Comment, CommentDTO>();
         }
 
         private static List<string> SplitActors(string actors)
