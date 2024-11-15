@@ -9,9 +9,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<EpisodeDTO>> UpdateEpisode(int id, UpdateEpisodeRequestDTO episodeRequestDTO);
         Task<Result<bool>> DeleteEpisode(int id);
         Task<Result<bool>> DeleteEpisodeOfMovie(int movieId);
-        Task<Result<int>> CountEpisode(int movieId);
         Task<Result<EpisodeDTO>> GetEpisodeById(int id);
         Task<Result<List<EpisodeDTO>>> GetEpisodesOfMovie(int movieId);
-        Task<Result<List<EpisodeDTO>>> GetPagedEpisodesOfMovie(int movieId, int pageNumber, int pageSize);
     }
 }

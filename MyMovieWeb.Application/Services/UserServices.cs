@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.Extensions.Logging;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -31,14 +30,33 @@ namespace MyMovieWeb.Application.Services
                 return Result<bool>.Failure(result.Message);
             }
 
+            var existingMovie = await _followedMovieRepo.FindAllAsync(fm => fm.UserId == userId && fm.MovieId == movieId);
+            if (existingMovie.Any())
+            {
+                return Result<bool>.Failure($"User id {userId} has followed movie id {movieId} before");
+            }
+
             await _followedMovieRepo.AddAsync(new FollowedMovie { MovieId = result.Data.Id, UserId = userId });
 
             return Result<bool>.Success(true, "Movie followed successfully");
         }
 
-        public async Task<Result<List<FollowedMovieDTO>>> GetFollowedMovies(string userId)
+        public async Task<Result<int>> CountFollowedMovie(string userId)
         {
-            IEnumerable<FollowedMovie> followedMovies = await _followedMovieRepo.GetByUserIdIncludeMovie(userId);
+            int totalCount = await _followedMovieRepo.CountAsync(fm => fm.UserId == userId);
+            return Result<int>.Success(totalCount, "Followed movie count retrived successfully");
+        }
+
+        public async Task<Result<List<FollowedMovieDTO>>> GetFollowedMovies(string userId, int pageNumber, int pageSize)
+        {
+            IEnumerable<FollowedMovie> followedMovies = await _followedMovieRepo
+                .FindAllAsync(
+                    pageNumber,
+                    pageSize,
+                    f => f.UserId == userId && f.Movie.IsShow == true,
+                    fm => fm.OrderBy(fm => fm.Movie.Title)
+                );
+
             List<FollowedMovieDTO> followedMovieDTOs = _mapper.Map<List<FollowedMovieDTO>>(followedMovies);
 
             return Result<List<FollowedMovieDTO>>.Success(followedMovieDTOs, "Followed movies retrieved successfully");

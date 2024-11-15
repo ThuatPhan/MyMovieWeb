@@ -124,9 +124,9 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<List<MovieDTO>> result = includeHiddenMovie
+                Result<List<MovieDTO>> result = includeHiddenMovie == true
                     ? await _movieServices.FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title))
-                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow == true, m => m.OrderBy(m => m.Title));
+                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow, m => m.OrderBy(m => m.Title));
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -148,7 +148,7 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 Result<int> result = includeHiddenMovie
                     ? await _movieServices.CountMovieBy(_ => true)
-                    : await _movieServices.CountMovieBy(m => m.IsShow == true);
+                    : await _movieServices.CountMovieBy(m => m.IsShow);
 
                 return ApiResponse<int>.SuccessResponse(result.Data, result.Message);
             }
@@ -164,7 +164,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpGet("count-by-genre")]
         public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre(
-            [FromQuery] int genreId, 
+            [FromQuery] int genreId,
             [FromQuery] bool includeHiddenMovie
         )
         {
@@ -172,7 +172,7 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 Result<int> result = includeHiddenMovie
                     ? await _movieServices.CountMovieBy(m => m.MovieGenres.Any(mg => mg.GenreId == genreId))
-                    : await _movieServices.CountMovieBy(m => m.IsShow == true && m.MovieGenres.Any(mg => mg.GenreId == genreId));
+                    : await _movieServices.CountMovieBy(m => m.IsShow && m.MovieGenres.Any(mg => mg.GenreId == genreId));
 
                 if (!result.IsSuccess)
                 {
@@ -201,7 +201,12 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, m => m.MovieGenres.Any(mg => mg.GenreId == genreId), m => m.OrderBy(m => m.Title));
+                    .FindAllMovies(
+                        pageNumber,
+                        pageSize,
+                        m => m.IsShow && m.MovieGenres.Any(mg => mg.GenreId == genreId),
+                        m => m.OrderBy(m => m.Title)
+                    );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -247,7 +252,12 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title).OrderByDescending(m => m.ReleaseDate));
+                        .FindAllMovies(
+                            pageNumber,
+                            pageSize,
+                            m => m.IsShow,
+                            m => m.OrderBy(m => m.Title).OrderByDescending(m => m.ReleaseDate)
+                        );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -270,7 +280,11 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, m => m.IsSeries, m => m.OrderBy(m => m.Title));
+                    .FindAllMovies(
+                        pageNumber,
+                        pageSize,
+                        m => m.IsShow && m.IsSeries, m => m.OrderBy(m => m.Title)
+                    );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -293,7 +307,11 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, m => !m.IsSeries, m => m.OrderBy(m => m.Title));
+                    .FindAllMovies(
+                        pageNumber,
+                        pageSize,
+                        m => m.IsShow && !m.IsSeries, m => m.OrderBy(m => m.Title)
+                    );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }

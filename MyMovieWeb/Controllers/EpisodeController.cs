@@ -126,43 +126,5 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, "An error occurred when retrieving episodes");
             }
         }
-
-        [HttpGet("count-by-movie/{movieId}")]
-        public async Task<ActionResult<ApiResponse<int>>> GetTotalEpisodeCount([FromRoute] int movieId)
-        {
-            try
-            {
-                Result<int> result = await _episodeServices.CountEpisode(movieId);
-                if (!result.IsSuccess)
-                {
-                    return ApiResponse<int>.FailureResponse(result.Message);
-                }
-                return ApiResponse<int>.SuccessResponse(result.Data, "Total episode count retrieved successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retrieving episodes");
-            }
-        }
-
-        [HttpGet("paged-by-movie/{movieId}")]
-        public async Task<ActionResult<ApiResponse<List<EpisodeDTO>>>> GetEpisodeOfMoviePaged([FromRoute] int movieId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
-        {
-            try
-            {
-                Result<List<EpisodeDTO>> result = await _episodeServices.GetPagedEpisodesOfMovie(movieId, pageNumber, pageSize);
-                if (!result.IsSuccess)
-                {
-                    return BadRequest(ApiResponse<List<EpisodeDTO>>.FailureResponse(result.Message));
-                }
-                return Ok(ApiResponse<List<EpisodeDTO>>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retrieving episodes");
-            }
-        }
     }
 }
