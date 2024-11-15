@@ -14,13 +14,24 @@ namespace MyMovieWeb.Application.Services
         private readonly FileUploadHelper _uploadHelper;
         private readonly IMovieRepository _movieRepository;
         private readonly IEpisodeRepository _episodeRepo;
+        private readonly ICommentRepository _commentRepo;
+        private readonly IWatchHistoryRepository _watchHistoryRepo;
 
-        public EpisodeServices(IMapper mapper, FileUploadHelper uploadHelper, IMovieRepository movieRepository, IEpisodeRepository episodeRepo)
+        public EpisodeServices(
+            IMapper mapper,
+            FileUploadHelper uploadHelper,
+            IMovieRepository movieRepository,
+            IEpisodeRepository episodeRepo,
+            ICommentRepository commentRepository,
+            IWatchHistoryRepository watchHistoryRepository
+        )
         {
             _mapper = mapper;
             _uploadHelper = uploadHelper;
             _episodeRepo = episodeRepo;
             _movieRepository = movieRepository;
+            _commentRepo = commentRepository;
+            _watchHistoryRepo = watchHistoryRepository;
         }
 
         public async Task<Result<EpisodeDTO>> CreateEpisode(CreateEpisodeRequestDTO episodeRequestDTO)
@@ -90,14 +101,17 @@ namespace MyMovieWeb.Application.Services
                 return Result<bool>.Failure($"Episode id {id} not found");
             }
 
-            var deleteTaks = new List<Task>
-            {
+            var deleteFileTasks = Task.WhenAll(
                 _uploadHelper.DeleteVideoFileAsync(episodeToDelete.VideoUrl),
                 _uploadHelper.DeleteImageFileAsync(episodeToDelete.ThumbnailUrl)
-            };
+            );
 
-            await Task.WhenAll(deleteTaks);
+            var deleteDataTasks = Task.WhenAll(
+                _commentRepo.RemoveRangeAsync(c => c.EpisodeId == id),
+                _watchHistoryRepo.RemoveRangeAsync(wh => wh.EpisodeId == id)
+            );
 
+            await Task.WhenAll(deleteFileTasks, deleteDataTasks);
             await _episodeRepo.RemoveAsync(episodeToDelete);
 
             return Result<bool>.Success(true, "Episode deleted successfully");
@@ -107,15 +121,15 @@ namespace MyMovieWeb.Application.Services
         {
             Movie? movieOfEpisode = await _movieRepository.GetByIdAsync(movieId);
 
-            if(movieOfEpisode is null)
+            if (movieOfEpisode is null)
             {
                 return Result<bool>.Failure($"Movie id {movieId} not found");
             }
-            
+
             IEnumerable<Episode> episodesOfMovie = await _episodeRepo.FindAllAsync(e => e.MovieId == movieId);
 
             var deleteTasks = new List<Task>();
-            foreach(var episode in episodesOfMovie)
+            foreach (var episode in episodesOfMovie)
             {
                 deleteTasks.Add(_uploadHelper.DeleteImageFileAsync(episode.ThumbnailUrl));
                 deleteTasks.Add(_uploadHelper.DeleteVideoFileAsync(episode.VideoUrl));
@@ -125,25 +139,6 @@ namespace MyMovieWeb.Application.Services
             await _episodeRepo.RemoveRangeAsync(e => e.MovieId == movieId);
 
             return Result<bool>.Success(true, "Episode deleted successfully");
-        }
-
-        public async Task<Result<int>> CountEpisode(int movieId)
-        {
-            Movie? movieOfEpisodes = await _movieRepository.GetByIdAsync(movieId);
-
-            if (movieOfEpisodes is null)
-            {
-                return Result<int>.Failure($"Movie id {movieId} not found");
-            }
-
-            if (!movieOfEpisodes.IsSeries)
-            {
-                return Result<int>.Failure($"Movie id {movieId} is not a series");
-            }
-
-            int totalEpisodeCount = await _episodeRepo.GetTotalEpisodeCountAsync(movieId);
-
-            return Result<int>.Success(totalEpisodeCount, "Total episode count retrieved successfully");
         }
 
         public async Task<Result<EpisodeDTO>> GetEpisodeById(int id)
@@ -174,25 +169,6 @@ namespace MyMovieWeb.Application.Services
             }
 
             IEnumerable<Episode> episodesOfMovie = await _episodeRepo.GetEpisodesAsync(movieId);
-            List<EpisodeDTO> episodeDTOs = _mapper.Map<List<EpisodeDTO>>(episodesOfMovie);
-
-            return Result<List<EpisodeDTO>>.Success(episodeDTOs, "Episodes retrieved successfully");
-        }
-
-        public async Task<Result<List<EpisodeDTO>>> GetPagedEpisodesOfMovie(int movieId, int pageNumber, int pageSize)
-        {
-            Movie? movieOfEpisodes = await _movieRepository.GetByIdAsync(movieId);
-
-            if (movieOfEpisodes is null)
-            {
-                return Result<List<EpisodeDTO>>.Failure($"Movie id {movieId} not found");
-            }
-            if (!movieOfEpisodes.IsSeries)
-            {
-                return Result<List<EpisodeDTO>>.Failure($"Movie id {movieId} is not a series");
-            }
-
-            IEnumerable<Episode> episodesOfMovie = await _episodeRepo.GetPagedEpisodesAsync(movieId, pageNumber, pageSize);
             List<EpisodeDTO> episodeDTOs = _mapper.Map<List<EpisodeDTO>>(episodesOfMovie);
 
             return Result<List<EpisodeDTO>>.Success(episodeDTOs, "Episodes retrieved successfully");

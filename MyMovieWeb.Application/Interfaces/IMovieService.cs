@@ -15,6 +15,6 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> FindAllMovies(int pageNumber, int pageSize, Expression<Func<Movie, bool>> predicate, Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null);
         Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize);
         Task<Result<bool>> IncreaseView(int id, int view);
-        Task<Result<MovieDTO>> CreateRating(CreateRateMovieRequestDTO createRateMovieRequestDTO);
+        Task<Result<bool>> CreateRate(CreateRateMovieRequestDTO rateMovieRequestDTO);
     }
 }

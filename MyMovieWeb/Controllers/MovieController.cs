@@ -119,13 +119,14 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies(
             [FromQuery] int pageNumber,
             [FromQuery] int pageSize,
-            [FromQuery] bool includeHiddenMovie)
+            [FromQuery] bool includeHiddenMovie
+        )
         {
             try
             {
-                Result<List<MovieDTO>> result = includeHiddenMovie
+                Result<List<MovieDTO>> result = includeHiddenMovie == true
                     ? await _movieServices.FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title))
-                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow == true, m => m.OrderBy(m => m.Title));
+                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow, m => m.OrderBy(m => m.Title));
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -147,7 +148,7 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 Result<int> result = includeHiddenMovie
                     ? await _movieServices.CountMovieBy(_ => true)
-                    : await _movieServices.CountMovieBy(m => m.IsShow == true);
+                    : await _movieServices.CountMovieBy(m => m.IsShow);
 
                 return ApiResponse<int>.SuccessResponse(result.Data, result.Message);
             }
@@ -162,13 +163,16 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("count-by-genre")]
-        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre([FromQuery] int genreId, [FromQuery] bool includeHiddenMovie)
+        public async Task<ActionResult<ApiResponse<int>>> GetMovieCountByGenre(
+            [FromQuery] int genreId,
+            [FromQuery] bool includeHiddenMovie
+        )
         {
             try
             {
                 Result<int> result = includeHiddenMovie
                     ? await _movieServices.CountMovieBy(m => m.MovieGenres.Any(mg => mg.GenreId == genreId))
-                    : await _movieServices.CountMovieBy(m => m.IsShow == true && m.MovieGenres.Any(mg => mg.GenreId == genreId));
+                    : await _movieServices.CountMovieBy(m => m.IsShow && m.MovieGenres.Any(mg => mg.GenreId == genreId));
 
                 if (!result.IsSuccess)
                 {
@@ -191,12 +195,18 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesByGenre(
             [FromQuery] int genreId,
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, m => m.MovieGenres.Any(mg => mg.GenreId == genreId), m => m.OrderBy(m => m.Title));
+                    .FindAllMovies(
+                        pageNumber,
+                        pageSize,
+                        m => m.IsShow && m.MovieGenres.Any(mg => mg.GenreId == genreId),
+                        m => m.OrderBy(m => m.Title)
+                    );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -215,7 +225,8 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesSameGenre(
             [FromQuery] int movieId,
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -235,12 +246,18 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("recent-added")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecentAddedMovies(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title).OrderByDescending(m => m.ReleaseDate));
+                        .FindAllMovies(
+                            pageNumber,
+                            pageSize,
+                            m => m.IsShow,
+                            m => m.OrderBy(m => m.Title).OrderByDescending(m => m.ReleaseDate)
+                        );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -257,12 +274,17 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("tv-shows")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTvShows(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, m => m.IsSeries, m => m.OrderBy(m => m.Title));
+                    .FindAllMovies(
+                        pageNumber,
+                        pageSize,
+                        m => m.IsShow && m.IsSeries, m => m.OrderBy(m => m.Title)
+                    );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -279,12 +301,17 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("movies")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
                 Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(pageNumber, pageSize, m => !m.IsSeries, m => m.OrderBy(m => m.Title));
+                    .FindAllMovies(
+                        pageNumber,
+                        pageSize,
+                        m => m.IsShow && !m.IsSeries, m => m.OrderBy(m => m.Title)
+                    );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -295,29 +322,6 @@ namespace MyMovieWeb.Presentation.Controllers
                     StatusCodes.Status500InternalServerError,
                     ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
                 );
-            }
-        }
-
-        [HttpPost("create-rate")]
-        public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateRate([FromBody] CreateRateMovieRequestDTO rateMovieRequestDTO)
-        {
-            try
-            {
-                Result<MovieDTO> result = await _movieServices.CreateRating(rateMovieRequestDTO);
-                if (!result.IsSuccess)
-                {
-                    return BadRequest(ApiResponse<CommentDTO>.FailureResponse(result.Message));
-                }
-                return CreatedAtAction(
-                    nameof(GetMovieById),
-                    new { id = result.Data.Id },
-                    ApiResponse<MovieDTO>.SuccessResponse(result.Data, result.Message)
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when create rate movie");
             }
         }
     }

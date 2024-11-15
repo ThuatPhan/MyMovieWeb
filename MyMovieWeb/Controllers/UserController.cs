@@ -1,4 +1,4 @@
-﻿ using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
@@ -44,14 +44,31 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("followed-movies")]
+        [HttpGet("count-followed-movies")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> GetFollowedMovies()
         {
             try
             {
                 string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                Result<List<FollowedMovieDTO>> result = await _userServices.GetFollowedMovies(userId);
+                Result<int> result = await _userServices.CountFollowedMovie(userId);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving followed movie");
+            }
+        }
+
+        [HttpGet("followed-movies")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> GetFollowedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            try
+            {
+                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<List<FollowedMovieDTO>> result = await _userServices.GetFollowedMovies(userId, pageNumber, pageSize);
 
                 return Ok(ApiResponse<List<FollowedMovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -59,6 +76,27 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(500, "An error occurred when retrieving followed movie");
+            }
+        }
+
+        [HttpPost("rate-movie")]
+        public async Task<ActionResult<ApiResponse<bool>>> RateMovie([FromBody] CreateRateMovieRequestDTO rateMovieRequestDTO)
+        {
+            try
+            {
+                Result<bool> result = await _userServices.RateMovie(rateMovieRequestDTO);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when rating movie");
             }
         }
     }

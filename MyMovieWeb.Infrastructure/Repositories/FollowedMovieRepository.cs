@@ -2,6 +2,7 @@
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
 using MyMovieWeb.Infrastructure.Data;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Infrastructure.Repositories
 {
@@ -14,22 +15,27 @@ namespace MyMovieWeb.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<int> CountByUserIdAsync(string userId)
+        public async Task<IEnumerable<FollowedMovie>> FindAllAsync(
+            int pageNumber, 
+            int pageSize,
+            Expression<Func<FollowedMovie, bool>> predicate, 
+            Func<IQueryable<FollowedMovie>, IOrderedQueryable<FollowedMovie>>? orderBy = null
+        )
         {
-            return await _dbContext.FollowedMovies
-                .Where(fm => fm.UserId == userId)
-                .CountAsync();
-        }
-
-        public async Task<IEnumerable<FollowedMovie>> GetByUserIdIncludeMovie(string userId)
-        {
-            return await _dbContext.FollowedMovies
-                .Where(fm => fm.UserId == userId)
+            IQueryable<FollowedMovie> query = _dbContext.FollowedMovies
+                .Where(predicate)
                 .Include(fm => fm.Movie)
                     .ThenInclude(m => m.MovieGenres)
-                    .ThenInclude(mg => mg.Genre)
-                .Include(fm => fm.Movie)
-                    .ThenInclude(m => m.Episodes)
+                    .ThenInclude(mg => mg.Genre);
+
+            if(orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            return await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
     }

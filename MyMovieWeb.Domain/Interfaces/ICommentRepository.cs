@@ -1,17 +1,15 @@
 ﻿using MyMovieWeb.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Data.SqlTypes;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Domain.Interfaces
 {
     public interface ICommentRepository : IRepository<Comment>
     {
-        Task<IEnumerable<Comment>> GetCommentsByMovieIdAsync(int movieId);
-        Task<IEnumerable<Comment>> GetCommentsByEpisodeIdAsync(int movieId, int episodeId);
-
+        Task<IEnumerable<Comment>> FindAllAsync(
+            int pageNumber,
+            int pageSize,
+            Expression<Func<Comment, bool>> predicate,
+            Func<IQueryable<Comment>, IOrderedQueryable<Comment>>? orderBy = null
+        );
     }
 }

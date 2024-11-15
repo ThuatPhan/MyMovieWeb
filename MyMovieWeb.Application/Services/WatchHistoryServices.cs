@@ -15,7 +15,12 @@ namespace MyMovieWeb.Application.Services
         private readonly IEpisodeServices _episodeServices;
         private readonly IWatchHistoryRepository _watchHistoryRepo;
 
-        public WatchHistoryServices(IMapper mapper, IMovieService movieService, IEpisodeServices episodeServices, IWatchHistoryRepository watchHistoryRepo)
+        public WatchHistoryServices(
+            IMapper mapper, 
+            IMovieService movieService, 
+            IEpisodeServices episodeServices, 
+            IWatchHistoryRepository watchHistoryRepo
+        )
         {
             _mapper = mapper;
             _movieServices = movieService;
@@ -96,6 +101,12 @@ namespace MyMovieWeb.Application.Services
 
             return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories updated successfully");
 
+        }
+
+        public async Task<Result<bool>> DeleteWatchHistoryOfMovie(int movieId)
+        {
+            await _watchHistoryRepo.RemoveRangeAsync(wh => wh.MovieId == movieId);
+            return Result<bool>.Success(true, $"Watch histories of movie id {movieId} deleted successfully");
         }
 
         public async Task<Result<WatchHistoryDTO>> GetCurrentWatchingTime(string userId, int movieId, int? episodeId = null)
