@@ -67,9 +67,22 @@ namespace MyMovieWeb.Infrastructure.Repositories
             return await _dbContext.Set<T>().ToListAsync();
         }
 
+        public async Task<T?> FindOneAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbContext.Set<T>().Where(predicate).FirstOrDefaultAsync();
+        }
+
         public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbContext.Set<T>().Where(predicate).ToListAsync();
+        }
+
+        public IQueryable<T> GetBaseQuery (Expression<Func<T, bool>> predicate)
+        {
+            IQueryable<T> query = _dbContext.Set<T>()
+                .Where(predicate);
+
+            return query;
         }
     }
 }

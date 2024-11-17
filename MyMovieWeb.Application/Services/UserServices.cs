@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -10,14 +11,21 @@ namespace MyMovieWeb.Application.Services
     public class UserServices : IUserServices
     {
         private readonly IMapper _mapper;
+        private readonly IRepository<Comment> _commentRepo;
+        private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IMovieService _movieService;
-        private readonly IFollowedMovieRepository _followedMovieRepo;
 
-        public UserServices(IMapper mapper, IMovieService movieService, IFollowedMovieRepository followedMovieRepository)
+        public UserServices(
+            IMapper mapper, 
+            IRepository<Comment> commentRepository, 
+            IRepository<FollowedMovie> followedMovieRepository, 
+            IMovieService movieService
+        )
         {
             _mapper = mapper;
             _movieService = movieService;
             _followedMovieRepo = followedMovieRepository;
+            _commentRepo = commentRepository;
         }
 
         public async Task<Result<bool>> FollowMovie(int movieId, string userId)
@@ -41,6 +49,29 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Movie followed successfully");
         }
 
+        public async Task<Result<bool>> UnfollowMovie(int movieId, string userId)
+        {
+            FollowedMovie? followedMovie = await _followedMovieRepo.FindOneAsync(fm => fm.MovieId == movieId && fm.UserId == userId);
+            if (followedMovie is null)
+            {
+                return Result<bool>.Failure($"User id {userId} has not followed movie id {movieId} before");
+            }
+            await _followedMovieRepo.RemoveAsync(followedMovie);
+            return Result<bool>.Success(true, "Unfollow movie successfully");
+
+        }
+
+        public async Task<Result<bool>> IsUserFollowMovie(int movieId, string userId)
+        {
+            FollowedMovie? followedMovie = await _followedMovieRepo.FindOneAsync(fm => fm.MovieId == movieId && fm.UserId == userId);
+            if (followedMovie is null)
+            {
+                return Result<bool>.Failure($"User id {userId} has not followed movie id {movieId} before");
+            }
+
+            return Result<bool>.Success(true, "User has followed movie before");
+        }
+
         public async Task<Result<int>> CountFollowedMovie(string userId)
         {
             int totalCount = await _followedMovieRepo.CountAsync(fm => fm.UserId == userId);
@@ -49,15 +80,24 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<FollowedMovieDTO>>> GetFollowedMovies(string userId, int pageNumber, int pageSize)
         {
-            IEnumerable<FollowedMovie> followedMovies = await _followedMovieRepo
-                .FindAllAsync(
-                    pageNumber,
-                    pageSize,
-                    f => f.UserId == userId && f.Movie.IsShow == true,
-                    fm => fm.OrderBy(fm => fm.Movie.Title)
-                );
+            IQueryable<FollowedMovie> query = _followedMovieRepo
+                .GetBaseQuery(predicate: fm => fm.UserId == userId && fm.Movie.IsShow == true);
+
+
+            IEnumerable<FollowedMovie> followedMovies = await query
+                .Include(fm => fm.Movie)
+                .OrderBy(fm => fm.Movie.Title)
+                .Where(fm => fm.Movie.IsShow)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             List<FollowedMovieDTO> followedMovieDTOs = _mapper.Map<List<FollowedMovieDTO>>(followedMovies);
+
+            foreach(var followedMovieDTO in followedMovieDTOs)
+            {
+                followedMovieDTO.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == followedMovieDTO.Id);
+            }
 
             return Result<List<FollowedMovieDTO>>.Success(followedMovieDTOs, "Followed movies retrieved successfully");
         }

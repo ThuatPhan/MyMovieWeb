@@ -44,6 +44,50 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
+        [HttpPost("unfollow-movie")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<bool>>> UnfollowMovie([FromQuery] int movieId)
+        {
+            try
+            {
+                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<bool> result = await _userServices.UnfollowMovie(movieId, userId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<bool>.SuccessResponse(true, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when unfollow movie");
+            }
+        }
+
+        [HttpGet("is-movie-followed")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<bool>>> IsUserFollowedMovie([FromQuery] int movieId)
+        {
+            try
+            {
+                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<bool> result = await _userServices.IsUserFollowMovie(movieId, userId);
+                if (!result.IsSuccess)
+                {
+                    return Ok(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<bool>.SuccessResponse(true, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when check followed movie");
+            }
+        }
+
         [HttpGet("count-followed-movies")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> GetFollowedMovies()

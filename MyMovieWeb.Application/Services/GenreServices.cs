@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -9,16 +10,20 @@ namespace MyMovieWeb.Application.Services
 {
     public class GenreServices : IGenreServices
     {
-        private readonly IGenreRepository _genreRepo;
+        private readonly IRepository<Genre> _genreRepo;
         private readonly IRepository<MovieGenre> _movieGenreRepo;
 
         private readonly IMapper _mapper;
 
-        public GenreServices(IMapper mapper, IGenreRepository genreRepo, IRepository<MovieGenre> movieGenreRepo)
+        public GenreServices(
+            IMapper mapper, 
+            IRepository<Genre> genreReposiotory, 
+            IRepository<MovieGenre> movieGenreRepository
+        )
         {
             _mapper = mapper;
-            _genreRepo = genreRepo;
-            _movieGenreRepo = movieGenreRepo;
+            _genreRepo = genreReposiotory;
+            _movieGenreRepo = movieGenreRepository;
         }
 
         public async Task<Result<GenreDTO>> CreateGenre(GenreRequestDTO genreRequestDTO)
@@ -93,7 +98,13 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<GenreDTO>>> GetAllGenres(int pageNumber, int pageSize)
         {
-            IEnumerable<Genre> genres = await _genreRepo.GetPagedGenresAsync(pageNumber, pageSize);
+            IQueryable<Genre> query = _genreRepo.GetBaseQuery(predicate: _ => true);
+
+            IEnumerable<Genre> genres = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
             List<GenreDTO> genreDTOs = _mapper.Map<List<GenreDTO>>(genres);
 
             return Result<List<GenreDTO>>.Success(genreDTOs, "Genres retrieved successfully");

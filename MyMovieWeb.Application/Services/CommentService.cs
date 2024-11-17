@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -10,12 +11,18 @@ namespace MyMovieWeb.Application.Services
     public class CommentService : ICommentService
     {
         private readonly IMapper _mapper;
-        private readonly ICommentRepository _commentRepo;
+        private readonly IRepository<Comment> _commentRepo;
         private readonly IMovieService _movieServics;
         private readonly IEpisodeServices _episodeServices;
         private readonly IAuth0Services _auth0Services;
 
-        public CommentService(IMapper mapper, IMovieService movieService, IEpisodeServices episodeServices, ICommentRepository commentRepository, IAuth0Services auth0Services)
+        public CommentService(
+            IMapper mapper, 
+            IMovieService movieService, 
+            IEpisodeServices episodeServices, 
+            IAuth0Services auth0Services,
+            IRepository<Comment> commentRepository
+        )
         {
             _mapper = mapper;
             _movieServics = movieService;
@@ -143,8 +150,13 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<CommentDTO>>.Failure(result.Message);
             }
 
-            IEnumerable<Comment> comments = await _commentRepo
-                .FindAllAsync(pageNumber, pageSize, c => c.MovieId == movieId, c => c.OrderByDescending(c => c.CreatedDate));
+            IQueryable<Comment> query = _commentRepo.GetBaseQuery(predicate: c => c.MovieId == movieId);
+
+            IEnumerable<Comment> comments = await query
+                .OrderByDescending(c => c.CreatedDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             List<CommentDTO> commentDTOs = _mapper.Map<List<CommentDTO>>(comments);
 
@@ -174,9 +186,13 @@ namespace MyMovieWeb.Application.Services
             {
                 return Result<List<CommentDTO>>.Failure(episodeResult.Message);
             }
+            IQueryable<Comment> query = _commentRepo.GetBaseQuery(predicate: c => c.MovieId == movieId && c.EpisodeId == episodeId);
 
-            IEnumerable<Comment> comments = await _commentRepo
-                .FindAllAsync(pageNumber, pageSize, c => c.MovieId == movieId && c.EpisodeId == episodeId, c => c.OrderByDescending(c => c.CreatedDate));
+            IEnumerable<Comment> comments = await query
+                .OrderByDescending(c => c.CreatedDate)
+                .Skip((pageSize - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             List<CommentDTO> commentDTOs = _mapper.Map<List<CommentDTO>>(comments);
 

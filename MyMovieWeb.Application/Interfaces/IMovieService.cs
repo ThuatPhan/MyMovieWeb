@@ -1,5 +1,6 @@
 ﻿using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
+using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Domain.Entities;
 using System.Linq.Expressions;
 
@@ -16,5 +17,6 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize);
         Task<Result<bool>> IncreaseView(int id, int view);
         Task<Result<bool>> CreateRate(CreateRateMovieRequestDTO rateMovieRequestDTO);
+        Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount);
     }
 }

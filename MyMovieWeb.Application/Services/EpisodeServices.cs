@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Helper;
@@ -12,18 +13,18 @@ namespace MyMovieWeb.Application.Services
     {
         private readonly IMapper _mapper;
         private readonly FileUploadHelper _uploadHelper;
-        private readonly IMovieRepository _movieRepository;
-        private readonly IEpisodeRepository _episodeRepo;
-        private readonly ICommentRepository _commentRepo;
-        private readonly IWatchHistoryRepository _watchHistoryRepo;
+        private readonly IRepository<Episode> _episodeRepo;
+        private readonly IRepository<Movie> _movieRepository;
+        private readonly IRepository<Comment> _commentRepo;
+        private readonly IRepository<WatchHistory> _watchHistoryRepo;
 
         public EpisodeServices(
             IMapper mapper,
             FileUploadHelper uploadHelper,
-            IMovieRepository movieRepository,
-            IEpisodeRepository episodeRepo,
-            ICommentRepository commentRepository,
-            IWatchHistoryRepository watchHistoryRepository
+            IRepository<Movie> movieRepository,
+            IRepository<Episode> episodeRepo,
+            IRepository<Comment> commentRepository,
+            IRepository<WatchHistory> watchHistoryRepository
         )
         {
             _mapper = mapper;
@@ -47,18 +48,18 @@ namespace MyMovieWeb.Application.Services
                 return Result<EpisodeDTO>.Failure($"Movie id {episodeRequestDTO.MovieId} is not a series");
             }
 
-            int episodeNumber = await _episodeRepo.GetTotalEpisodeCountAsync(movieOfEpisode.Id) + 1;
+            int episodeNumber = await _episodeRepo.CountAsync(e => e.MovieId == movieOfEpisode.Id) + 1;
 
-            Episode newMovie = _mapper.Map<Episode>(episodeRequestDTO);
-            newMovie.EpisodeNumber = episodeNumber;
+            Episode newEpisode = _mapper.Map<Episode>(episodeRequestDTO);
+            newEpisode.EpisodeNumber = episodeNumber;
 
             string videoUrl = await _uploadHelper.UploadVideoAsync(episodeRequestDTO.VideoFile);
-            newMovie.VideoUrl = videoUrl;
+            newEpisode.VideoUrl = videoUrl;
 
             string thumbnailUrl = await _uploadHelper.UploadImageAsync(episodeRequestDTO.ThumbnailFile);
-            newMovie.ThumbnailUrl = thumbnailUrl;
+            newEpisode.ThumbnailUrl = thumbnailUrl;
 
-            Episode createdEpisode = await _episodeRepo.AddAsync(newMovie);
+            Episode createdEpisode = await _episodeRepo.AddAsync(newEpisode);
 
             EpisodeDTO episodeDTO = _mapper.Map<EpisodeDTO>(createdEpisode);
 
@@ -168,7 +169,9 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<EpisodeDTO>>.Failure($"Movie id {movieId} is not a series");
             }
 
-            IEnumerable<Episode> episodesOfMovie = await _episodeRepo.GetEpisodesAsync(movieId);
+            IQueryable<Episode> query = _episodeRepo.GetBaseQuery(predicate: e => e.MovieId == movieId);
+            IEnumerable<Episode> episodesOfMovie = await query.ToListAsync();
+
             List<EpisodeDTO> episodeDTOs = _mapper.Map<List<EpisodeDTO>>(episodesOfMovie);
 
             return Result<List<EpisodeDTO>>.Success(episodeDTOs, "Episodes retrieved successfully");

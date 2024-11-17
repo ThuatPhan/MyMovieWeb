@@ -66,9 +66,7 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<WatchEpisodeRequestDTO, WatchHistory>()
                 .ForMember(dest => dest.CurrentWatching, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.WatchingAt)));
 
-            CreateMap<WatchHistory, WatchHistoryDTO>()
-                .ForMember(dest => dest.Episodes, opt => opt.MapFrom(src => src.Movie.Episodes));
-
+            CreateMap<WatchHistory, WatchHistoryDTO>();
             //Followed Movie
             CreateMap<FollowedMovie, FollowedMovieDTO>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Movie.Id))

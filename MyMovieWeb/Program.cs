@@ -47,13 +47,13 @@ builder.Services.AddSingleton<FileUploadHelper>();
 builder.Services.AddAutoMapper(typeof(ApplicationMapper));
 builder.Services.AddMemoryCache();
 
-builder.Services.AddScoped<IGenreRepository, GenreRepository>();
-builder.Services.AddScoped<IMovieRepository, MovieRepository>();
-builder.Services.AddScoped<IEpisodeRepository, EpisodeRepository>();
+builder.Services.AddScoped<IRepository<Genre>, Repository<Genre>>();
+builder.Services.AddScoped<IRepository<Movie>, Repository<Movie>>();
 builder.Services.AddScoped<IRepository<MovieGenre>, Repository<MovieGenre>>();
-builder.Services.AddScoped<IWatchHistoryRepository,WatchHistoryRepository>();
-builder.Services.AddScoped<IFollowedMovieRepository, FollowedMovieRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IRepository<Episode>, Repository<Episode>>();
+builder.Services.AddScoped<IRepository<Comment>, Repository<Comment>>();
+builder.Services.AddScoped<IRepository<FollowedMovie>, Repository<FollowedMovie>>();
+builder.Services.AddScoped<IRepository<WatchHistory>, Repository<WatchHistory>>();
 
 builder.Services.AddScoped<IAuth0Services, Auth0Services>();
 builder.Services.AddScoped<IGenreServices, GenreServices>();
