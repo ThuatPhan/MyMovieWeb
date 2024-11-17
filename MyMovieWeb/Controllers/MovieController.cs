@@ -4,6 +4,7 @@ using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
+using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Presentation.Response;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -313,6 +314,24 @@ namespace MyMovieWeb.Presentation.Controllers
                         m => m.IsShow && !m.IsSeries, m => m.OrderBy(m => m.Title)
                     );
 
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
+                );
+            }
+        }
+
+        [HttpGet("top-views")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTopViews([FromQuery]TimePeriod timePeriod, [FromQuery] int topCount)
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.GetTopView(timePeriod, topCount);
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)

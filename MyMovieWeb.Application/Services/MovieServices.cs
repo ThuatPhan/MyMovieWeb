@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
+using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
 using System.Linq.Expressions;
@@ -12,22 +14,22 @@ namespace MyMovieWeb.Application.Services
     public class MovieServices : IMovieService
     {
         private readonly IMapper _mapper;
-        private readonly IGenreRepository _genreRepo;
-        private readonly IMovieRepository _movieRepo;
-        private readonly ICommentRepository _commentRepo;
-        private readonly IFollowedMovieRepository _followedMovieRepo;
-        private readonly IWatchHistoryRepository _watchHistoryRepo;
+        private readonly IRepository<Genre> _genreRepo;
+        private readonly IRepository<Movie> _movieRepo;
+        private readonly IRepository<Comment> _commentRepo;
+        private readonly IRepository<FollowedMovie> _followedMovieRepo;
+        private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
         private readonly FileUploadHelper _uploadHelper;
 
         public MovieServices(
-            IMapper mapper, 
-            IGenreRepository genreRepository,
-            IMovieRepository movieRepo, 
-            ICommentRepository commentRepository,
-            IFollowedMovieRepository followedMovieRepository,
-            IWatchHistoryRepository watchHistoryRepository, 
-            IEpisodeServices episodeServices, 
+            IMapper mapper,
+            IRepository<Genre> genreRepository,
+            IRepository<Movie> movieRepo,
+            IRepository<Comment> commentRepository,
+            IRepository<FollowedMovie> followedMovieRepository,
+            IRepository<WatchHistory> watchHistoryRepository,
+            IEpisodeServices episodeServices,
             FileUploadHelper uploadHelper
         )
         {
@@ -71,8 +73,7 @@ namespace MyMovieWeb.Application.Services
                 movieToCreate.VideoUrl = videoUrl;
             }
 
-            await _movieRepo.AddAsync(movieToCreate);
-            Movie? createdMovie = await _movieRepo.GetByIdIncludeGenresAsync(movieToCreate.Id);
+            Movie createdMovie = await _movieRepo.AddAsync(movieToCreate);
             MovieDTO movieDTO = _mapper.Map<MovieDTO>(createdMovie);
 
             return Result<MovieDTO>.Success(movieDTO, "Movie created successfully");
@@ -80,7 +81,8 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<MovieDTO>> UpdateMovie(int id, UpdateMovieRequestDTO movieRequestDTO)
         {
-            Movie? movieToUpdate = await _movieRepo.GetByIdIncludeGenresAsync(id);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id);
+            Movie? movieToUpdate = await query.FirstOrDefaultAsync();
 
             if (movieToUpdate is null)
             {
@@ -125,7 +127,12 @@ namespace MyMovieWeb.Application.Services
             _mapper.Map(movieRequestDTO, movieToUpdate);
 
             await _movieRepo.UpdateAsync(movieToUpdate);
-            Movie? updatedMovie = await _movieRepo.GetByIdIncludeGenresAsync(id);
+
+            Movie? updatedMovie = await query
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                    .FirstOrDefaultAsync();
+
             MovieDTO movieDTO = _mapper.Map<MovieDTO>(updatedMovie);
 
             return Result<MovieDTO>.Success(movieDTO, "Movie updated successfully");
@@ -168,12 +175,17 @@ namespace MyMovieWeb.Application.Services
         public async Task<Result<int>> CountMovieBy(Expression<Func<Movie, bool>> predicate)
         {
             int totalCount = await _movieRepo.CountAsync(predicate);
-            return Result<int>.Success(totalCount, "Total count retrieved successfully");
+            return Result<int>.Success(totalCount, "Total movie count retrieved successfully");
         }
 
         public async Task<Result<MovieDTO>> GetMovieById(int id)
         {
-            Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(id);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id);
+
+            Movie? movie = await query
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                .FirstOrDefaultAsync();
 
             if (movie is null)
             {
@@ -181,6 +193,8 @@ namespace MyMovieWeb.Application.Services
             }
 
             MovieDTO movieDTO = _mapper.Map<MovieDTO>(movie);
+            int commentCount = await _commentRepo.CountAsync(c => c.MovieId == id);
+            movieDTO.CommentCount = commentCount;
 
             return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
         }
@@ -192,16 +206,39 @@ namespace MyMovieWeb.Application.Services
             Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null
         )
         {
-            IEnumerable<Movie> movies = await _movieRepo.FindAllIncludeGenresAsync(pageNumber, pageSize, predicate, orderBy);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate);
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            IEnumerable<Movie> movies = await query
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            foreach (var movieDTO in movieDTOs)
+            {
+                int commentCount = await _commentRepo.CountAsync(c => c.MovieId == movieDTO.Id);
+                movieDTO.CommentCount = commentCount;
+            }
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
 
         public async Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize)
         {
-            Movie? movie = await _movieRepo.GetByIdIncludeGenresAsync(movieId);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == movieId);
+
+            Movie? movie = await query
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                    .FirstOrDefaultAsync();
+
             if (movie is null)
             {
                 return Result<List<MovieDTO>>.Failure($"Movie id {movieId} not found");
@@ -209,11 +246,17 @@ namespace MyMovieWeb.Application.Services
 
             List<int> genreIds = movie.MovieGenres.Select(mg => mg.GenreId).ToList();
 
-            IEnumerable<Movie> movies = await _movieRepo.FindAllIncludeGenresAsync(
-                pageNumber,
-                pageSize,
-                m => m.Id != movieId && m.IsShow == true && m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId))
-            );
+            IQueryable<Movie> moviesQuery = _movieRepo
+                .GetBaseQuery(
+                    predicate: m => m.Id != movieId && m.IsShow == true && m.MovieGenres.Any(mg => genreIds.Contains(mg.GenreId))
+                );
+
+            IEnumerable<Movie> movies = await moviesQuery
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
@@ -246,6 +289,61 @@ namespace MyMovieWeb.Application.Services
             await _movieRepo.UpdateAsync(movieToRate);
 
             return Result<bool>.Success(true, "Rate created successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount)
+        {
+            DateTime startDate, endDate;
+            switch (timePeriod)
+            {
+                case TimePeriod.Today:
+                    startDate = DateTime.Today;
+                    endDate = DateTime.Today.AddDays(1).AddTicks(-1);
+                    break;
+
+                case TimePeriod.ThisWeek:
+                    startDate = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                    endDate = startDate.AddDays(7).AddTicks(-1);
+                    break;
+
+                case TimePeriod.ThisMonth:
+                    startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                    endDate = startDate.AddMonths(1).AddTicks(-1);
+                    break;
+
+                case TimePeriod.ThisYear:
+                    startDate = new DateTime(DateTime.Today.Year, 1, 1);
+                    endDate = startDate.AddYears(1).AddTicks(-1);
+                    break;
+
+                default:
+                    throw new NotSupportedException("Unsupported TimePeriod");
+            }
+
+            var query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.LogDate >= startDate && wh.LogDate <= endDate)
+                .GroupBy(wh => wh.MovieId)
+                .Select(group => new
+                {
+                    MovieId = group.Key,
+                    ViewCount = group.Count()
+                })
+                .OrderByDescending(group => group.ViewCount)
+                .Take(topCount);
+            var topMoviesData = await query.ToListAsync();
+
+            var movieIds = topMoviesData
+                .Select(m => m.MovieId)
+                .ToList();
+
+            var topViewQuery = _movieRepo
+                .GetBaseQuery(predicate: m => movieIds.Contains(m.Id));
+            var topMovies = await topViewQuery.ToListAsync();
+            topMovies = topMovies.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
+
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(topMovies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Top view retrieved successfully");
         }
     }
 }

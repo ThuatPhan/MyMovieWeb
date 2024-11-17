@@ -25,7 +25,8 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpPost("guest/create-log/movie")]
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchMovieLog(
             [FromBody] WatchMovieRequestDTO watchMovieRequest,
-            [FromQuery] string userId)
+            [FromQuery] string userId
+        )
         {
             try
             {
@@ -49,7 +50,8 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpPost("guest/create-log/episode")]
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchEpisodeLog(
             [FromBody] WatchEpisodeRequestDTO watchMovieRequest,
-            [FromQuery] string userId)
+            [FromQuery] string userId
+        )
         {
             try
             {
@@ -76,7 +78,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<WatchHistoryDTO> result = await _watchHistoryService.CreateWatchMovieLog(watchMovieRequest, userId);
 
@@ -101,7 +103,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<WatchHistoryDTO> result = await _watchHistoryService.CreateWatchEpisodeLog(watchMovieRequest, userId);
 
@@ -126,7 +128,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<List<WatchHistoryDTO>> result = await _watchHistoryService.UpdateGuestToUserWatchHistory(guestId, userId);
 
@@ -148,7 +150,8 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime(
             [FromQuery] string userId,
             [FromQuery] int movieId,
-            [FromQuery] int? episodeId = null)
+            [FromQuery] int? episodeId = null
+        )
         {
             try
             {
@@ -191,7 +194,8 @@ namespace MyMovieWeb.Presentation.Controllers
         public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
             [FromQuery] string guestId,
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
@@ -215,11 +219,12 @@ namespace MyMovieWeb.Presentation.Controllers
         [Authorize]
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime(
             [FromQuery] int movieId,
-            [FromQuery] int? episodeId = null)
+            [FromQuery] int? episodeId = null
+        )
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<WatchHistoryDTO> result = await _watchHistoryService.GetCurrentWatchingTime(userId, movieId, episodeId);
                 if (!result.IsSuccess)
@@ -242,7 +247,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<WatchHistoryDTO> result = await _watchHistoryService.GetWatchHistory(id, userId);
                 if (!result.IsSuccess)
@@ -263,11 +268,12 @@ namespace MyMovieWeb.Presentation.Controllers
         [Authorize]
         public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
             [FromQuery] int pageNumber,
-            [FromQuery] int pageSize)
+            [FromQuery] int pageSize
+        )
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, userId);
 

@@ -16,6 +16,7 @@
         public int View { get; set; }
         public int RateCount { get; set; }
         public int RateTotal { get; set; }
+        public int CommentCount { get; set; }
         public bool IsShow { get; set; }
         public DateTime ReleaseDate { get; set; }
     }
