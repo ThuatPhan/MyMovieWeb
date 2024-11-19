@@ -12,6 +12,8 @@ namespace MyMovieWeb.Domain.Interfaces
         Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> GetAllAsync();
+        Task<T?> FindOneAsync(Expression<Func<T, bool>> predicate);
         Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> predicate);
+        IQueryable<T> GetBaseQuery(Expression<Func<T, bool>> predicate);
     }
 }
