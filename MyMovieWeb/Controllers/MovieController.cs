@@ -394,5 +394,27 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, "An error occurred when searching movie");
             }
         }
+        [HttpGet("new-comments")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesWithNewComments([FromQuery] int topCount)
+        {
+            try
+            {
+
+                Result<List<MovieDTO>> result = await _movieServices.GetNewComment(topCount);
+                if (!result.IsSuccess)
+                {
+                    return NotFound(ApiResponse<List<MovieDTO>>.FailureResponse(result.Message));
+                }
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies with new comments.")
+                );
+            }
+        }
     }
 }

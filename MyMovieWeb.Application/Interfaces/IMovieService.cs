@@ -20,6 +20,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<int>> CountTredingInDay();
         Task<Result<List<MovieDTO>>> GetTrendingInDay(int pageNumber, int pageSize);
         Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount);
+        Task<Result<List<MovieDTO>>> GetNewComment(int topCount);
         Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword);
     }
 }
