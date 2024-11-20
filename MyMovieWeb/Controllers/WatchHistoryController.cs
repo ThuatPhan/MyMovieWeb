@@ -190,6 +190,21 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
+        [HttpGet("guest/count")]
+        public async Task<ActionResult<ApiResponse<int>>> CountWatchHistory([FromQuery] string userId)
+        {
+            try
+            {
+                Result<int> result = await _watchHistoryService.CountWatchHistories(userId);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history count");
+            }
+        }
+
         [HttpGet("guest/logs")]
         public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
             [FromQuery] string guestId,
@@ -261,6 +276,23 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(500, "An error occurred when retriving watch history");
+            }
+        }
+
+        [HttpGet("user/count")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<int>>> CountWatchHistory()
+        {
+            try
+            {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<int> result = await _watchHistoryService.CountWatchHistories(userId);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history count");
             }
         }
 

@@ -345,5 +345,64 @@ namespace MyMovieWeb.Application.Services
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Top view retrieved successfully");
         }
+
+        public async Task<Result<int>> CountTredingInDay()
+        {
+            DateTime startDate, endDate;
+            startDate = DateTime.Today;
+            endDate = DateTime.Today.AddDays(1).AddTicks(-1);
+
+            var query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.LogDate >= startDate && wh.LogDate <= endDate)
+                .GroupBy(wh => wh.MovieId)
+                .Select(group => new
+                {
+                    MovieId = group.Key,
+                    ViewCount = group.Count()
+                })
+                .OrderByDescending(group => group.ViewCount);
+
+            var trendingMovies = await query.ToListAsync();
+            int totalCount = trendingMovies.Count();
+            return Result<int>.Success(totalCount, "Trending movies count successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetTrendingInDay(int pageNumber, int pageSize)
+        {
+            DateTime startDate, endDate;
+            startDate = DateTime.Today;
+            endDate = DateTime.Today.AddDays(1).AddTicks(-1);
+
+            var query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.LogDate >= startDate && wh.LogDate <= endDate)
+                .GroupBy(wh => wh.MovieId)
+                .Select(group => new
+                {
+                    MovieId = group.Key,
+                    ViewCount = group.Count()
+                })
+                .OrderByDescending(group => group.ViewCount)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
+            var trendingMoviesData = await query.ToListAsync();
+
+            List<int> movieIds = trendingMoviesData.Select(m => m.MovieId).ToList();
+
+            IEnumerable<Movie> trendingMovies = await _movieRepo
+                .FindAllAsync(m => movieIds.Contains(m.Id));
+
+            trendingMovies = trendingMovies.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(trendingMovies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Trending movies retrieved successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword)
+        {
+            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(m => m.Title.ToLower().Trim().Contains(keyword.ToLower().Trim()));
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
+        }
     }
 }

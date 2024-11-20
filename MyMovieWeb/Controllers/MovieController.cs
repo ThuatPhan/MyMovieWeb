@@ -327,7 +327,10 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("top-views")]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTopViews([FromQuery]TimePeriod timePeriod, [FromQuery] int topCount)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTopViews(
+            [FromQuery] TimePeriod timePeriod,
+            [FromQuery] int topCount
+        )
         {
             try
             {
@@ -341,6 +344,54 @@ namespace MyMovieWeb.Presentation.Controllers
                     StatusCodes.Status500InternalServerError,
                     ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies")
                 );
+            }
+        }
+
+        [HttpGet("count-trending")]
+        public async Task<ActionResult<ApiResponse<int>>> CountTrending()
+        {
+            try
+            {
+                Result<int> result = await _movieServices.CountTredingInDay();
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when counting trending movies");
+            }
+        }
+
+        [HttpGet("trending")]
+        public async Task<ActionResult<List<MovieDTO>>> GetTrending(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.GetTrendingInDay(pageNumber, pageSize);
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving trending movies");
+            }
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> SearchMovie([FromQuery] string keyword)
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.SearchMovieByName(keyword);
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when searching movie");
             }
         }
     }
