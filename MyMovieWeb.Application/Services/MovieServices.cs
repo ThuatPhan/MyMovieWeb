@@ -345,5 +345,39 @@ namespace MyMovieWeb.Application.Services
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Top view retrieved successfully");
         }
+        public async Task<Result<List<MovieDTO>>> GetNewComment(int topCount)
+        {
+            var latestCommentsQuery = _commentRepo
+                .GetBaseQuery(c => true)
+                .OrderByDescending(c => c.CreatedDate)
+                .GroupBy(c => c.MovieId)
+                .Select(group => new
+                {
+                    MovieId = group.Key,
+                    LatestCommentDate = group.Max(c => c.CreatedDate)
+                })
+                .OrderByDescending(c => c.LatestCommentDate)
+                .Take(topCount); 
+
+            var latestComments = await latestCommentsQuery.ToListAsync();
+
+            if (!latestComments.Any())
+            {
+                return Result<List<MovieDTO>>.Failure("No movies with comments found.");
+            }
+
+            var movieIds = latestComments.Select(c => c.MovieId).ToList();
+
+            var moviesQuery = _movieRepo
+                .GetBaseQuery(m => movieIds.Contains(m.Id));
+            var movies = await moviesQuery.ToListAsync();
+
+            var sortedMovies = movies
+                .OrderBy(m => movieIds.IndexOf(m.Id))
+                .ToList();
+
+            var movieDTOs = _mapper.Map<List<MovieDTO>>(sortedMovies);
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies with latest comments retrieved successfully.");
+        }
     }
 }
