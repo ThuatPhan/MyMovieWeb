@@ -13,10 +13,6 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<GenreRequestDTO, Genre>();
             CreateMap<Genre, GenreDTO>();
 
-            //Rate
-            CreateMap<CreateMovieRequestDTO, Movie>();
-            CreateMap<Movie, MovieDTO>();
-
             //Movie
             CreateMap<CreateMovieRequestDTO, Movie>()
                 .ForMember(dest => dest.Actors, opt => opt.MapFrom(src => string.Join(",", src.Actors)))
@@ -51,7 +47,8 @@ namespace MyMovieWeb.Application.Helper
                 {
                     GenreId = mg.GenreId,
                     GenreName = mg.Genre.Name
-                }).ToList()));
+                }).ToList()))
+                .ForMember(dest => dest.Episodes, opt => opt.MapFrom(src => src.Episodes));
 
             //Episode
             CreateMap<CreateEpisodeRequestDTO, Episode>();
@@ -65,8 +62,8 @@ namespace MyMovieWeb.Application.Helper
 
             CreateMap<WatchEpisodeRequestDTO, WatchHistory>()
                 .ForMember(dest => dest.CurrentWatching, opt => opt.MapFrom(src => TimeSpan.FromSeconds(src.WatchingAt)));
-
             CreateMap<WatchHistory, WatchHistoryDTO>();
+
             //Followed Movie
             CreateMap<FollowedMovie, FollowedMovieDTO>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Movie.Id))
