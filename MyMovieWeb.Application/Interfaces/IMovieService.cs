@@ -18,5 +18,6 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<bool>> IncreaseView(int id, int view);
         Task<Result<bool>> CreateRate(CreateRateMovieRequestDTO rateMovieRequestDTO);
         Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount);
+        Task<Result<List<MovieDTO>>> GetNewComment(int topCount);
     }
 }
