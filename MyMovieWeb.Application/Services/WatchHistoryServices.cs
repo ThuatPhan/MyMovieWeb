@@ -137,7 +137,15 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<int>> CountWatchHistories(string userId)
         {
-            int totalCount = await _watchHistoryRepo.CountAsync(wh => wh.UserId == userId);
+            IQueryable<WatchHistory> query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.UserId == userId)
+                .GroupBy(wh => wh.MovieId)
+                .Select(wh => wh
+                    .OrderByDescending(wh => wh.LogDate)
+                    .First()
+                );
+
+            int totalCount = await query.CountAsync();
             return Result<int>.Success(totalCount, "Watch histories counted successfully");
         }
 
@@ -147,7 +155,9 @@ namespace MyMovieWeb.Application.Services
                 .GetBaseQuery(predicate: wh => wh.Id == id && wh.UserId == userId)
                 .Include(wh => wh.Movie)
                     .ThenInclude(m => m.MovieGenres)
-                        .ThenInclude(mg => mg.Genre);
+                        .ThenInclude(mg => mg.Genre)
+                .Include(wh => wh.Movie)
+                    .ThenInclude(m => m.Episodes);
 
             WatchHistory? watchHistory = await query.FirstOrDefaultAsync();
 

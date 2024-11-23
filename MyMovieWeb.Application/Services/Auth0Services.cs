@@ -89,7 +89,6 @@ namespace MyMovieWeb.Application.Services
             return Result<Auth0UserDTO>.Success(user, "User retrived successfully");
         }
 
-
         public async Task<Result<List<Auth0UserDTO>>> GetAllUsers()
         {
             if (_memoryCache.TryGetValue("Auth0Users", out List<Auth0UserDTO>? cachedUsers))
@@ -108,7 +107,7 @@ namespace MyMovieWeb.Application.Services
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl)
             {
-                Headers = { Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken) }
+                Headers = { Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken) },
             };
 
             var response = await _httpClient.SendAsync(requestMessage);
