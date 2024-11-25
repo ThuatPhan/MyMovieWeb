@@ -22,5 +22,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount);
         Task<Result<List<MovieDTO>>> GetNewComment(int topCount);
         Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword);
+        Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId , int topMovie);
+
     }
 }
