@@ -25,7 +25,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        //[Authorize(Policy = "create:movie")]
+        [Authorize(Policy = "create:movie")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateMovie([FromForm] CreateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -299,7 +299,7 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
-
+        
         [HttpGet("movies")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies(
             [FromQuery] int pageNumber,
