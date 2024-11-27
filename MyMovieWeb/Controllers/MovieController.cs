@@ -5,6 +5,7 @@ using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
+using MyMovieWeb.Application.Services;
 using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Presentation.Response;
 
@@ -347,6 +348,7 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+        
 
         [HttpGet("count-movies")]
         public async Task<ActionResult<ApiResponse<int>>> GetMoviesCount()
@@ -478,6 +480,31 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving movies with new comments.")
+                );
+            }
+        }
+        [HttpGet("recommended")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecommendedMovies(
+             [FromQuery] int watchedMovieId,
+             [FromQuery] int topMovie )
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices.GetRecommendedMovies(watchedMovieId, topMovie);
+
+                if (!result.IsSuccess)
+                {
+                    return NotFound(ApiResponse<List<MovieDTO>>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving recommended movies");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred while retrieving recommended movies.")
                 );
             }
         }

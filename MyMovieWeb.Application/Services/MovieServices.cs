@@ -8,6 +8,7 @@ using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
+using System;
 using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Services
@@ -468,5 +469,64 @@ namespace MyMovieWeb.Application.Services
             var movieDTOs = _mapper.Map<List<MovieDTO>>(sortedMovies);
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies with latest comments retrieved successfully.");
         }
+        
+        public async Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId, int topMovie)
+        {
+            try
+            {
+               
+                var userLogDates = await _watchHistoryRepo
+                    .GetBaseQuery(wh => wh.MovieId == movieId)
+                    .Select(wh => new { wh.UserId, wh.LogDate })
+                    .ToListAsync();
+
+                if (!userLogDates.Any())
+                {
+                    return Result<List<MovieDTO>>.Failure("No users have watched this movie.");
+                }
+
+                var watchHistories = await _watchHistoryRepo
+                    .GetBaseQuery(wh => wh.MovieId != movieId)
+                    .ToListAsync();
+
+                var watchedAfterMovies = watchHistories
+                    .Where(wh => userLogDates.Any(u => u.UserId == wh.UserId && wh.LogDate > u.LogDate))
+                    .GroupBy(wh => wh.MovieId)
+                    .Select(group => new
+                    {
+                        MovieId = group.Key,
+                        WatchCount = group.Count(),
+                        LastWatched = group.Max(wh => wh.LogDate)
+                    })
+                    .OrderByDescending(group => group.WatchCount)
+                    .ThenByDescending(group => group.LastWatched)
+                    .Take(topMovie)
+                    .ToList();
+
+                if (!watchedAfterMovies.Any())
+                {
+                    return Result<List<MovieDTO>>.Failure("No movies were watched after the current movie.");
+                }
+
+                // Lấy thông tin chi tiết các bộ phim
+                var movieIds = watchedAfterMovies.Select(m => m.MovieId).ToList();
+                var moviesQuery = _movieRepo
+                    .GetBaseQuery(m => movieIds.Contains(m.Id));
+                var watchedAfterMoviesDetails = await moviesQuery.ToListAsync();
+
+                var sortedMovies = watchedAfterMoviesDetails
+                    .OrderBy(m => movieIds.IndexOf(m.Id))
+                    .ToList();
+
+                var movieDTOs = _mapper.Map<List<MovieDTO>>(sortedMovies);
+                return Result<List<MovieDTO>>.Success(movieDTOs, "Movies watched after the current movie retrieved successfully.");
+            }
+            catch (Exception ex)
+            {
+                return Result<List<MovieDTO>>.Failure($"An error occurred while retrieving movies: {ex.Message}");
+            }
+        }
+
+
     }
 }
