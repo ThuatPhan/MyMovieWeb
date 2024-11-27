@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
@@ -10,6 +11,7 @@ using MyMovieWeb.Domain.Interfaces;
 using MyMovieWeb.Infrastructure.Data;
 using MyMovieWeb.Infrastructure.Repositories;
 using MyMovieWeb.Presentation.Auth0;
+using Stripe;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,10 +44,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 });
 builder.Services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
 
+
+
+StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Value;
+
+
 builder.Services.AddHttpClient<FileUploadHelper>();
 builder.Services.AddSingleton<FileUploadHelper>();
 builder.Services.AddAutoMapper(typeof(ApplicationMapper));
 builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
 
 builder.Services.AddScoped<IRepository<Genre>, Repository<Genre>>();
 builder.Services.AddScoped<IRepository<Movie>, Repository<Movie>>();
@@ -54,6 +62,7 @@ builder.Services.AddScoped<IRepository<Episode>, Repository<Episode>>();
 builder.Services.AddScoped<IRepository<Comment>, Repository<Comment>>();
 builder.Services.AddScoped<IRepository<FollowedMovie>, Repository<FollowedMovie>>();
 builder.Services.AddScoped<IRepository<WatchHistory>, Repository<WatchHistory>>();
+builder.Services.AddScoped<IRepository<Notification>, Repository<Notification>>();
 
 builder.Services.AddScoped<IAuth0Services, Auth0Services>();
 builder.Services.AddScoped<IGenreServices, GenreServices>();
@@ -62,6 +71,8 @@ builder.Services.AddScoped<IEpisodeServices, EpisodeServices>();
 builder.Services.AddScoped<IWatchHistoryServices, WatchHistoryServices>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<INotificationServices, NotificationServices>();
+builder.Services.AddSingleton<IMessageServices, MessageServices>();
 
 
 builder.Services.AddControllers();
@@ -144,6 +155,8 @@ app.UseCors("AllowSpecificOrigins");
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<MessageHub>("/messageHub");
 
 app.MapControllers();
 

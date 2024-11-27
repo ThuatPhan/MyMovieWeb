@@ -16,9 +16,10 @@ namespace MyMovieWeb.Presentation.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly IUserServices _userServices;
 
-        public UserController(IUserServices userServices)
+        public UserController(IUserServices userServices, ILogger<UserController> logger)
         {
             _userServices = userServices;
+            _logger = logger;
         }
 
 
@@ -141,6 +142,63 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(500, "An error occurred when rating movie");
+            }
+        }
+
+        [HttpGet("notifications")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<NotificationDTO>>>> GetNotifications()
+        {
+            try
+            {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<List<NotificationDTO>> result = await _userServices.GetNotifications(userId);
+                return Ok(ApiResponse<List<NotificationDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving notifcations");
+            }
+        }
+
+        [HttpPut("notification/mark-as-read/{notificationId}")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<NotificationDTO>>> MarkNotificationAsRead([FromRoute] int notificationId)
+        {
+            try
+            {
+                Result<NotificationDTO> result = await _userServices.MarkNotificationAsRead(notificationId);
+                if(!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<NotificationDTO>.FailureResponse(result.Message));
+                }
+                return Ok(ApiResponse<NotificationDTO>.SuccessResponse(result.Data, result.Message));   
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving notifcations");
+            }
+        }
+
+        [HttpDelete("notification/delete/{notificationId}")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteNotification([FromRoute] int notificationId)
+        {
+            try
+            {
+                Result<bool> result = await _userServices.DeleteNotification(notificationId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+                return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving notifcations");
             }
         }
     }

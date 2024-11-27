@@ -31,7 +31,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
                 Result<CommentDTO> result = await _commentService.CreateMovieComment(commentRequestDTO, userId);
                 if (!result.IsSuccess)
@@ -59,7 +59,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<CommentDTO> result = await _commentService.CreateEpisodeComment(commentRequestDTO, userId);
                 if (!result.IsSuccess)
                 {

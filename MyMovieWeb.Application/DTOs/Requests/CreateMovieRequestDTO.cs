@@ -5,6 +5,8 @@ namespace MyMovieWeb.Application.DTOs.Requests
     public class CreateMovieRequestDTO
     {
         public required string Title { get; set; }
+        public bool IsPaid { get; set; } = false;
+        public decimal? Price { get; set; }
         public string? Description { get; set; }
         public required string Director { get; set; }
         public required List<string> Actors { get; set; }

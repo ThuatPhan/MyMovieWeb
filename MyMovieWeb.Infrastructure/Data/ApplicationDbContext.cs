@@ -13,6 +13,8 @@ namespace MyMovieWeb.Infrastructure.Data
         public DbSet<FollowedMovie> FollowedMovies { get; set; }
         public DbSet<WatchHistory> WatchHistories { get; set; }
         public DbSet<Comment> Comments { get; set; }
+
+        public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configure many-to-many relationship

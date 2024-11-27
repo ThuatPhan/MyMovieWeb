@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyMovieWeb.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using MyMovieWeb.Infrastructure.Data;
 namespace MyMovieWeb.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241123063852_AddTableNotification")]
+    partial class AddTableNotification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,9 +166,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsPaid")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsSeries")
                         .HasColumnType("bit");
 
@@ -178,9 +178,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.Property<string>("PosterUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("Price")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("RateCount")
                         .HasColumnType("int");
@@ -264,9 +261,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
 
                     b.Property<int?>("EpisodeId")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsWatched")
-                        .HasColumnType("bit");
 
                     b.Property<DateTime>("LogDate")
                         .HasColumnType("datetime2");
