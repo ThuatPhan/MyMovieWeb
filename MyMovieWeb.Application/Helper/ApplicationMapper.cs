@@ -13,6 +13,31 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<GenreRequestDTO, Genre>();
             CreateMap<Genre, GenreDTO>();
 
+            //BlogTag
+            CreateMap<BlogTagRequestDTO,BlogTag>();
+            CreateMap<BlogTag, BlogTagDTO>();
+
+
+            //BlogPost
+            CreateMap<CreateBlogRequestDTO, BlogPost>()
+                .ForMember(dest => dest.BlogPostTags, opt => opt.MapFrom(src => src.TagIds.Select(id => new BlogPostTag
+                {
+                    BlogTagId = id
+                })));
+                
+
+            CreateMap<UpdateBlogRequestDTO, BlogPost>()
+                .ForMember(dest => dest.BlogPostTags, opt => opt.MapFrom(src => src.TagIds.Select(id => new BlogPostTag
+                {
+                    BlogTagId = id
+                })));
+            CreateMap<BlogPost, BlogPostDTO>()
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.BlogPostTags.Select(mg => new BlogPostTagDTO
+                {
+                    BlogTagId = mg.BlogTagId,
+                    TagName = mg.BlogTag.Name
+                }).ToList()));
+
             //Movie
             CreateMap<CreateMovieRequestDTO, Movie>()
                 .ForMember(dest => dest.Actors, opt => opt.MapFrom(src => string.Join(",", src.Actors)))

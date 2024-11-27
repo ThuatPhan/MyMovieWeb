@@ -13,6 +13,9 @@ namespace MyMovieWeb.Infrastructure.Data
         public DbSet<FollowedMovie> FollowedMovies { get; set; }
         public DbSet<WatchHistory> WatchHistories { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<BlogPost> BlogPosts { get; set; }
+        public DbSet<BlogTag> BlogTags { get; set; }
+        public DbSet<BlogPostTag> BlogPostTags { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configure many-to-many relationship
@@ -28,6 +31,19 @@ namespace MyMovieWeb.Infrastructure.Data
                 .HasOne(mg => mg.Genre)
                 .WithMany(g => g.MovieGenres)
                 .HasForeignKey(mg => mg.GenreId);
+
+            modelBuilder.Entity<BlogPostTag>()
+                .HasKey(mg => new { mg.BlogPostId, mg.BlogTagId });
+
+            modelBuilder.Entity<BlogPostTag>()
+                .HasOne(mg => mg.BlogPost)
+                .WithMany(m => m.BlogPostTags)
+                .HasForeignKey(mg => mg.BlogPostId);
+
+            modelBuilder.Entity<BlogPostTag>()
+                .HasOne(mg => mg.BlogTag)
+                .WithMany(g => g.BlogPostTags)
+                .HasForeignKey(mg => mg.BlogTagId);
         }
     }
 }
