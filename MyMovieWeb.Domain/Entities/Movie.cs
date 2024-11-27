@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
         public string Title { get; set; }
+        public bool IsPaid { get; set; } = false;
+        public decimal? Price { get; set; }
         public string? Description { get; set; }
         public string Director { get; set; }
         public string Actors { get; set; }
@@ -16,7 +18,10 @@
         public int RateCount { get; set; } = 0;
         public int RateTotal { get; set; } = 0;
         public bool IsShow { get; set; } = true;
-        public DateTime ReleaseDate { get; set; } = DateTime.UtcNow;
+        public DateTime ReleaseDate { get; set; } = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+        );
         public ICollection<Episode> Episodes { get; set; }
         public ICollection<MovieGenre> MovieGenres { get; set; } = new List<MovieGenre>();
     }

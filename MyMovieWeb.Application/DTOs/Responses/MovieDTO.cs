@@ -3,15 +3,17 @@
     public class MovieDTO
     {
         public int Id { get; set; }
-        public string Title { get; set; }
+        public required string Title { get; set; }
+        public bool IsPaid { get; set; }
+        public decimal? Price { get; set; }
         public string? Description { get; set; }
-        public string Director { get; set; }
-        public List<string> Actors { get; set; }
-        public string PosterUrl { get; set; }
-        public string BannerUrl { get; set; }
-        public List<MovieGenreDTO> Genres { get; set; }
+        public required string Director { get; set; }
+        public required List<string> Actors { get; set; }
+        public required string PosterUrl { get; set; }
+        public required string BannerUrl { get; set; }
+        public required List<MovieGenreDTO> Genres { get; set; }
         public bool IsSeries { get; set; }
-        public List<EpisodeDTO> Episodes { get; set; }
+        public required List<EpisodeDTO> Episodes { get; set; }
         public bool? IsSeriesCompleted { get; set; }
         public string? VideoUrl { get; set; }
         public int View { get; set; }

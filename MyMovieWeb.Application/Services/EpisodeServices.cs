@@ -17,6 +17,8 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<Movie> _movieRepository;
         private readonly IRepository<Comment> _commentRepo;
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
+        private readonly IRepository<FollowedMovie> _followedMovieRepo;
+        private readonly INotificationServices _notificationServices;
 
         public EpisodeServices(
             IMapper mapper,
@@ -24,7 +26,10 @@ namespace MyMovieWeb.Application.Services
             IRepository<Movie> movieRepository,
             IRepository<Episode> episodeRepo,
             IRepository<Comment> commentRepository,
-            IRepository<WatchHistory> watchHistoryRepository
+            IRepository<WatchHistory> watchHistoryRepository,
+            IRepository<FollowedMovie> followedMovieRepository,
+            INotificationServices notificationServices
+
         )
         {
             _mapper = mapper;
@@ -33,6 +38,8 @@ namespace MyMovieWeb.Application.Services
             _movieRepository = movieRepository;
             _commentRepo = commentRepository;
             _watchHistoryRepo = watchHistoryRepository;
+            _followedMovieRepo = followedMovieRepository;
+            _notificationServices = notificationServices;
         }
 
         public async Task<Result<EpisodeDTO>> CreateEpisode(CreateEpisodeRequestDTO episodeRequestDTO)
@@ -62,6 +69,12 @@ namespace MyMovieWeb.Application.Services
             Episode createdEpisode = await _episodeRepo.AddAsync(newEpisode);
 
             EpisodeDTO episodeDTO = _mapper.Map<EpisodeDTO>(createdEpisode);
+
+            List<string> userIds = (await _followedMovieRepo.FindAllAsync(fm => fm.MovieId == movieOfEpisode.Id))
+                .Select(fm => fm.UserId)
+                .ToList();
+
+            await _notificationServices.AddNotifications(userIds, $"Phim {movieOfEpisode.Title} đã có tập mới: {episodeDTO.Title}", $"/watch/{movieOfEpisode.Id}");
 
             return Result<EpisodeDTO>.Success(episodeDTO, "Create episode successfully");
         }

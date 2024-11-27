@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
@@ -101,6 +102,35 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<MovieDTO> result = await _movieServices.GetMovieById(id);
+                if (!result.IsSuccess)
+                {
+                    return NotFound(ApiResponse<MovieDTO>.FailureResponse(result.Message));
+                }
+                return Ok(ApiResponse<MovieDTO>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<MovieDTO>.FailureResponse("An error occurred when retrieving movie")
+                );
+            }
+        }
+
+        [HttpGet("watch")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<MovieDTO>>> WatchMovie([FromQuery] int id)
+        {
+            try
+            {
+                bool hasToken = false;
+                if (Request.Headers.TryGetValue("Authorization", out var token))
+                {
+                    hasToken = !token.IsNullOrEmpty();
+                }
+
+                Result<MovieDTO> result = await _movieServices.GetMovieToWatch(id, hasToken);
                 if (!result.IsSuccess)
                 {
                     return NotFound(ApiResponse<MovieDTO>.FailureResponse(result.Message));
@@ -273,6 +303,25 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
+        [HttpGet("count-tv-shows")]
+        public async Task<ActionResult<ApiResponse<int>>> GetTvShowsCount()
+        {
+            try
+            {
+                Result<int> result = await _movieServices.CountMovieBy(m => m.IsSeries && m.IsShow);
+
+                return ApiResponse<int>.SuccessResponse(result.Data, result.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<int>.FailureResponse("An error occurred when counting movies")
+                );
+            }
+        }
+
         [HttpGet("tv-shows")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetTvShows(
             [FromQuery] int pageNumber,
@@ -300,6 +349,26 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
         
+
+        [HttpGet("count-movies")]
+        public async Task<ActionResult<ApiResponse<int>>> GetMoviesCount()
+        {
+            try
+            {
+                Result<int> result = await _movieServices.CountMovieBy(m => !m.IsSeries && m.IsShow);
+
+                return ApiResponse<int>.SuccessResponse(result.Data, result.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<int>.FailureResponse("An error occurred when counting movies")
+                );
+            }
+        }
+
         [HttpGet("movies")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovies(
             [FromQuery] int pageNumber,
@@ -395,17 +464,14 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, "An error occurred when searching movie");
             }
         }
-        [HttpGet("new-comments")]
+
+        [HttpGet("new-comment")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMoviesWithNewComments([FromQuery] int topCount)
         {
             try
             {
 
                 Result<List<MovieDTO>> result = await _movieServices.GetNewComment(topCount);
-                if (!result.IsSuccess)
-                {
-                    return NotFound(ApiResponse<List<MovieDTO>>.FailureResponse(result.Message));
-                }
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)

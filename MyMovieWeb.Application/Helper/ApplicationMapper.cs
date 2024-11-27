@@ -115,6 +115,9 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<CreateMovieCommentRequestDTO, Comment>();
             CreateMap<CreateEpisodeCommentRequestDTO, Comment>();
             CreateMap<Comment, CommentDTO>();
+
+            //Notification
+            CreateMap<Notification, NotificationDTO>();
         }
 
         private static List<string> SplitActors(string actors)

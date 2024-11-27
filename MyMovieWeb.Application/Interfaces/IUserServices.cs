@@ -11,5 +11,8 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<int>> CountFollowedMovie(string userId);
         Task<Result<List<FollowedMovieDTO>>> GetFollowedMovies(string userId, int pageNumber, int pageSize);
         Task<Result<bool>> RateMovie(CreateRateMovieRequestDTO rateMovieRequestDTO);
+        Task<Result<List<NotificationDTO>>> GetNotifications(string userId);
+        Task<Result<NotificationDTO>> MarkNotificationAsRead(int notificationId);
+        Task<Result<bool>> DeleteNotification(int notificationId);
     }
 }

@@ -14,18 +14,21 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<Comment> _commentRepo;
         private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IMovieService _movieService;
+        private readonly INotificationServices _notificationService;
 
         public UserServices(
             IMapper mapper, 
             IRepository<Comment> commentRepository, 
             IRepository<FollowedMovie> followedMovieRepository, 
-            IMovieService movieService
+            IMovieService movieService,
+            INotificationServices notificationService
         )
         {
             _mapper = mapper;
             _movieService = movieService;
             _followedMovieRepo = followedMovieRepository;
             _commentRepo = commentRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<Result<bool>> FollowMovie(int movieId, string userId)
@@ -110,6 +113,21 @@ namespace MyMovieWeb.Application.Services
                 return Result<bool>.Failure(result.Message);
             }
             return Result<bool>.Success(result.Data, result.Message);
+        }
+
+        public async Task<Result<List<NotificationDTO>>> GetNotifications(string userId)
+        {
+            return await _notificationService.GetNotifications(userId);
+        }
+
+        public Task<Result<NotificationDTO>> MarkNotificationAsRead(int notificationId)
+        {
+            return _notificationService.MarkAsRead(notificationId);
+        }
+
+        public Task<Result<bool>> DeleteNotification(int notificationId)
+        {
+            return _notificationService.DeleteNotification(notificationId);
         }
     }
 }
