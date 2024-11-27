@@ -54,6 +54,9 @@ builder.Services.AddScoped<IRepository<Episode>, Repository<Episode>>();
 builder.Services.AddScoped<IRepository<Comment>, Repository<Comment>>();
 builder.Services.AddScoped<IRepository<FollowedMovie>, Repository<FollowedMovie>>();
 builder.Services.AddScoped<IRepository<WatchHistory>, Repository<WatchHistory>>();
+builder.Services.AddScoped<IRepository<BlogPost>, Repository<BlogPost>>();
+builder.Services.AddScoped<IRepository<BlogTag>, Repository<BlogTag>>();
+builder.Services.AddScoped<IRepository<BlogPostTag>, Repository<BlogPostTag>>();
 
 builder.Services.AddScoped<IAuth0Services, Auth0Services>();
 builder.Services.AddScoped<IGenreServices, GenreServices>();
@@ -62,6 +65,8 @@ builder.Services.AddScoped<IEpisodeServices, EpisodeServices>();
 builder.Services.AddScoped<IWatchHistoryServices, WatchHistoryServices>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IBlogTagService, BlogTagService>();
+builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 
 
 builder.Services.AddControllers();
