@@ -115,6 +115,31 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<List<BlogPostDTO>>>> GetAllBlogPost(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize,
+            [FromQuery] bool includeHiddenMovie
+        )
+        {
+            try
+            {
+                Result<List<BlogPostDTO>> result = includeHiddenMovie == true
+                    ? await _blogServices.FindAllBlogPost(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title))
+                    : await _blogServices.FindAllBlogPost(pageNumber, pageSize, m => m.IsShow, m => m.OrderBy(m => m.Title));
+
+                return Ok(ApiResponse<List<BlogPostDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<BlogPostDTO>>.FailureResponse("An error occurred when retrieving blog")
+                );
+            }
+
+        }
 
     }
 }

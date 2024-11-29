@@ -14,6 +14,7 @@ namespace MyMovieWeb.Application.DTOs.Responses
         public string Content { get; set; }
         public List<BlogPostTagDTO> Tags { get; set; }
         public string Thumbnail { get; set; }
+        public bool IsShow { get; set; }
         public DateTime CreatedDate { get; set; } =  DateTime.UtcNow;
        
     }
