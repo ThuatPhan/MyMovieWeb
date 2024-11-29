@@ -72,6 +72,160 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
+        [HttpPut("guest/watched")]
+        public async Task<ActionResult<ApiResponse<bool>>> MarkWatchHistoriesWatched([FromQuery] string guestId, [FromQuery] int movieId)
+        {
+            try
+            {
+                Result<bool> result = await _watchHistoryService.MarkWatchHistoryWatched(guestId, movieId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<bool>.SuccessResponse(true, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when mark watched movie");
+            }
+        }
+
+        [HttpGet("guest/log")]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetWatchHistory([FromQuery] int id, [FromQuery] string userId)
+        {
+            try
+            {
+                Result<WatchHistoryDTO> result = await _watchHistoryService.GetWatchHistory(id, userId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<WatchHistoryDTO>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<WatchHistoryDTO>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retriving watch history");
+            }
+        }
+
+        [HttpGet("guest/count")]
+        public async Task<ActionResult<ApiResponse<int>>> CountWatchHistory([FromQuery] string guestId)
+        {
+            try
+            {
+                Result<int> result = await _watchHistoryService.CountWatchHistories(guestId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<int>.FailureResponse(result.Message));
+
+                }
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history count");
+            }
+        }
+
+        [HttpGet("guest/watching/count")]
+        public async Task<ActionResult<ApiResponse<int>>> CountWatchingHistory([FromQuery] string guestId)
+        {
+            try
+            {
+                Result<int> result = await _watchHistoryService.CountWatchingHistories(guestId);
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<int>.FailureResponse(result.Message));
+
+                }
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watching history count");
+            }
+        }
+
+        [HttpGet("guest/logs")]
+        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
+            [FromQuery] string guestId,
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, guestId);
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<List<EpisodeDTO>>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<List<WatchHistoryDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history");
+            }
+        }
+
+        [HttpGet("guest/continue-watching")]
+        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchingHistories(
+            [FromQuery] string guestId,
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchingHistories(pageNumber, pageSize, guestId);
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<List<EpisodeDTO>>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<List<WatchHistoryDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history");
+            }
+        }
+
+        [HttpGet("guest/current-watching-time")]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime(
+            [FromQuery] string userId,
+            [FromQuery] int movieId,
+            [FromQuery] int? episodeId = null
+        )
+        {
+            try
+            {
+                Result<WatchHistoryDTO> result = await _watchHistoryService.GetCurrentWatchingTime(userId, movieId, episodeId);
+                if (!result.IsSuccess)
+                {
+                    return Ok(ApiResponse<WatchHistoryDTO>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<WatchHistoryDTO>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving current watching time");
+            }
+        }
+
         [HttpPost("user/create-log/movie")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> CreateWatchMovieLog([FromBody] WatchMovieRequestDTO watchMovieRequest)
@@ -146,35 +300,14 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("guest/current-watching-time")]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetCurrentWatchingTime(
-            [FromQuery] string userId,
-            [FromQuery] int movieId,
-            [FromQuery] int? episodeId = null
-        )
+        [HttpGet("user/log")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetWatchHistory([FromQuery] int id)
         {
             try
             {
-                Result<WatchHistoryDTO> result = await _watchHistoryService.GetCurrentWatchingTime(userId, movieId, episodeId);
-                if (!result.IsSuccess)
-                {
-                    return Ok(ApiResponse<WatchHistoryDTO>.FailureResponse(result.Message));
-                }
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
 
-                return Ok(ApiResponse<WatchHistoryDTO>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retrieving current watching time");
-            }
-        }
-
-        [HttpGet("guest/log")]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetWatchHistory([FromQuery] int id, [FromQuery] string userId)
-        {
-            try
-            {
                 Result<WatchHistoryDTO> result = await _watchHistoryService.GetWatchHistory(id, userId);
                 if (!result.IsSuccess)
                 {
@@ -190,11 +323,13 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("guest/count")]
-        public async Task<ActionResult<ApiResponse<int>>> CountWatchHistory([FromQuery] string userId)
+        [HttpGet("user/count")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<int>>> CountWatchHistory()
         {
             try
             {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<int> result = await _watchHistoryService.CountWatchHistories(userId);
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
@@ -205,16 +340,62 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("guest/logs")]
+        [HttpGet("user/watching/count")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<int>>> CountWatchingHistory()
+        {
+            try
+            {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<int> result = await _watchHistoryService.CountWatchingHistories(userId);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history count");
+            }
+        }
+
+        [HttpGet("user/logs")]
+        [Authorize]
         public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
-            [FromQuery] string guestId,
             [FromQuery] int pageNumber,
             [FromQuery] int pageSize
         )
         {
             try
             {
-                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, guestId);
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+
+                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, userId);
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(ApiResponse<List<EpisodeDTO>>.FailureResponse(result.Message));
+                }
+
+                return Ok(ApiResponse<List<WatchHistoryDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving watch history");
+            }
+        }
+
+        [HttpGet("user/continue-watching")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchingHistories(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+
+                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchingHistories(pageNumber, pageSize, userId);
 
                 if (!result.IsSuccess)
                 {
@@ -256,70 +437,25 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("user/log")]
+        [HttpPut("user/watched")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<WatchHistoryDTO>>> GetWatchHistory([FromQuery] int id)
+        public async Task<ActionResult<ApiResponse<bool>>> MarkWatchHistoriesWatched([FromQuery] int movieId)
         {
             try
             {
-                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-
-                Result<WatchHistoryDTO> result = await _watchHistoryService.GetWatchHistory(id, userId);
+                String userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<bool> result = await _watchHistoryService.MarkWatchHistoryWatched(userId, movieId);
                 if (!result.IsSuccess)
                 {
-                    return BadRequest(ApiResponse<WatchHistoryDTO>.FailureResponse(result.Message));
+                    return BadRequest(ApiResponse<bool>.FailureResponse(result.Message));
                 }
 
-                return Ok(ApiResponse<WatchHistoryDTO>.SuccessResponse(result.Data, result.Message));
+                return Ok(ApiResponse<bool>.SuccessResponse(true, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retriving watch history");
-            }
-        }
-
-        [HttpGet("user/count")]
-        [Authorize]
-        public async Task<ActionResult<ApiResponse<int>>> CountWatchHistory()
-        {
-            try
-            {
-                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                Result<int> result = await _watchHistoryService.CountWatchHistories(userId);
-                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retrieving watch history count");
-            }
-        }
-
-        [HttpGet("user/logs")]
-        [Authorize]
-        public async Task<ActionResult<ApiResponse<List<WatchHistoryDTO>>>> GetWatchHistories(
-            [FromQuery] int pageNumber,
-            [FromQuery] int pageSize
-        )
-        {
-            try
-            {
-                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-
-                Result<List<WatchHistoryDTO>> result = await _watchHistoryService.GetWatchHistories(pageNumber, pageSize, userId);
-
-                if (!result.IsSuccess)
-                {
-                    return BadRequest(ApiResponse<List<EpisodeDTO>>.FailureResponse(result.Message));
-                }
-
-                return Ok(ApiResponse<List<WatchHistoryDTO>>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retrieving watch history");
+                return StatusCode(500, "An error occurred when mark watched movie");
             }
         }
     }

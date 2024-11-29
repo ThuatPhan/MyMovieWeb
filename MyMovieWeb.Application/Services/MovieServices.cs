@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
@@ -22,6 +23,7 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
         private readonly FileUploadHelper _uploadHelper;
+        private readonly IMessageServices _messageServices;
 
         public MovieServices(
             IMapper mapper,
@@ -31,7 +33,8 @@ namespace MyMovieWeb.Application.Services
             IRepository<FollowedMovie> followedMovieRepository,
             IRepository<WatchHistory> watchHistoryRepository,
             IEpisodeServices episodeServices,
-            FileUploadHelper uploadHelper
+            FileUploadHelper uploadHelper,
+            IMessageServices messageServices
         )
         {
             _mapper = mapper;
@@ -42,6 +45,7 @@ namespace MyMovieWeb.Application.Services
             _followedMovieRepo = followedMovieRepository;
             _watchHistoryRepo = watchHistoryRepository;
             _episodeServices = episodeServices;
+            _messageServices = messageServices;
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
@@ -82,7 +86,10 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<MovieDTO>> UpdateMovie(int id, UpdateMovieRequestDTO movieRequestDTO)
         {
-            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id)
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre);
+
             Movie? movieToUpdate = await query.FirstOrDefaultAsync();
 
             if (movieToUpdate is null)
@@ -114,7 +121,7 @@ namespace MyMovieWeb.Application.Services
             if (movieRequestDTO.BannerFile != null)
             {
                 await _uploadHelper.DeleteImageFileAsync(movieToUpdate.BannerUrl);
-                string bannerUrl = await _uploadHelper.UploadVideoAsync(movieRequestDTO.BannerFile);
+                string bannerUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.BannerFile);
                 movieToUpdate.BannerUrl = bannerUrl;
             }
 
@@ -196,6 +203,27 @@ namespace MyMovieWeb.Application.Services
             MovieDTO movieDTO = _mapper.Map<MovieDTO>(movie);
             int commentCount = await _commentRepo.CountAsync(c => c.MovieId == id);
             movieDTO.CommentCount = commentCount;
+
+            return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
+        }
+
+        public async Task<Result<MovieDTO>> GetMovieToWatch(int id, bool isAuthenticated)
+        {
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id);
+
+            Movie? movie = await query.FirstOrDefaultAsync();
+
+            if (movie is null)
+            {
+                return Result<MovieDTO>.Failure($"Movie id {id} not found");
+            }
+
+            MovieDTO movieDTO = _mapper.Map<MovieDTO>(movie);
+
+            if (isAuthenticated)
+            {
+                await _messageServices.SendMessage($"Has a user watching movie {movieDTO.Title}");
+            }
 
             return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
         }
@@ -396,6 +424,12 @@ namespace MyMovieWeb.Application.Services
             trendingMovies = trendingMovies.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(trendingMovies);
 
+            foreach (var movie in movieDTOs)
+            {
+                int commentCount = await _commentRepo.CountAsync(c => c.MovieId == movie.Id);
+                movie.CommentCount = commentCount;
+            }
+
             return Result<List<MovieDTO>>.Success(movieDTOs, "Trending movies retrieved successfully");
         }
 
@@ -405,6 +439,7 @@ namespace MyMovieWeb.Application.Services
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
+
         public async Task<Result<List<MovieDTO>>> GetNewComment(int topCount)
         {
             var latestCommentsQuery = _commentRepo
@@ -417,14 +452,9 @@ namespace MyMovieWeb.Application.Services
                     LatestCommentDate = group.Max(c => c.CreatedDate)
                 })
                 .OrderByDescending(c => c.LatestCommentDate)
-                .Take(topCount); 
+                .Take(topCount);
 
             var latestComments = await latestCommentsQuery.ToListAsync();
-
-            if (!latestComments.Any())
-            {
-                return Result<List<MovieDTO>>.Failure("No movies with comments found.");
-            }
 
             var movieIds = latestComments.Select(c => c.MovieId).ToList();
 

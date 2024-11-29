@@ -113,6 +113,30 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, $"Watch histories of movie id {movieId} deleted successfully");
         }
 
+        public async Task<Result<bool>> MarkWatchHistoryWatched(string userId, int movieId)
+        {
+            if (userId.IsNullOrEmpty())
+            {
+                return Result<bool>.Failure("User id can't be empty");
+            }
+
+            IEnumerable<WatchHistory> watchHistories = await _watchHistoryRepo
+                .FindAllAsync(wh => wh.UserId == userId && wh.MovieId == movieId);
+
+            if (!watchHistories.Any())
+            {
+                return Result<bool>.Failure("No watch histories found");
+            }
+
+            foreach (var watchHistory in watchHistories)
+            {
+                watchHistory.IsWatched = true;
+            }
+
+            await _watchHistoryRepo.UpdateRangeAsync(watchHistories);
+            return Result<bool>.Success(true, "Mark histories watched successfully");
+        }
+
         public async Task<Result<WatchHistoryDTO>> GetCurrentWatchingTime(string userId, int movieId, int? episodeId = null)
         {
             if (userId.IsNullOrEmpty())
@@ -149,10 +173,24 @@ namespace MyMovieWeb.Application.Services
             return Result<int>.Success(totalCount, "Watch histories counted successfully");
         }
 
+        public async Task<Result<int>> CountWatchingHistories(string userId)
+        {
+            IQueryable<WatchHistory> query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.UserId == userId && !wh.IsWatched)
+                .GroupBy(wh => wh.MovieId)
+                .Select(wh => wh
+                    .OrderByDescending(wh => wh.LogDate)
+                    .First()
+                );
+
+            int totalCount = await query.CountAsync();
+            return Result<int>.Success(totalCount, "Watch histories counted successfully");
+        }
+
         public async Task<Result<WatchHistoryDTO>> GetWatchHistory(int id, string userId)
         {
             IQueryable<WatchHistory> query = _watchHistoryRepo
-                .GetBaseQuery(predicate: wh => wh.Id == id && wh.UserId == userId)
+                .GetBaseQuery(predicate: wh => wh.Id == id && wh.UserId == userId && !wh.IsWatched)
                 .Include(wh => wh.Movie)
                     .ThenInclude(m => m.MovieGenres)
                         .ThenInclude(mg => mg.Genre)
@@ -179,6 +217,36 @@ namespace MyMovieWeb.Application.Services
             }
 
             return Result<WatchHistoryDTO>.Success(watchHistoryDTO, "Watch history retrieved sucessfully");
+        }
+
+        public async Task<Result<List<WatchHistoryDTO>>> GetWatchingHistories(int pageNumber, int pageSize, string userId)
+        {
+            if (userId.IsNullOrEmpty())
+            {
+                return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
+            }
+
+            IQueryable<WatchHistory> query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.UserId == userId && !wh.IsWatched)
+                .Include(wh => wh.Movie)
+                    .ThenInclude(m => m.MovieGenres)
+                        .ThenInclude(mg => mg.Genre)
+                .GroupBy(wh => wh.MovieId)
+                .Select(group => group.OrderByDescending(group => group.LogDate).First())
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
+            List<WatchHistory> watchHistories = await query
+                .ToListAsync();
+
+            List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
+
+            foreach (var watchHistoryDTO in watchHistoryDTOs)
+            {
+                watchHistoryDTO.Movie.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == watchHistoryDTO.Movie.Id);
+            }
+
+            return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories retrieved successfully");
         }
 
         public async Task<Result<List<WatchHistoryDTO>>> GetWatchHistories(int pageNumber, int pageSize, string userId)

@@ -12,23 +12,29 @@ namespace MyMovieWeb.Application.Services
     {
         private readonly IMapper _mapper;
         private readonly IRepository<Comment> _commentRepo;
+        private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IMovieService _movieServics;
         private readonly IEpisodeServices _episodeServices;
         private readonly IAuth0Services _auth0Services;
-
+        private readonly INotificationServices _notificationServices;
         public CommentService(
             IMapper mapper, 
+            IRepository<FollowedMovie> followedMovieRepo,
             IMovieService movieService, 
             IEpisodeServices episodeServices, 
             IAuth0Services auth0Services,
-            IRepository<Comment> commentRepository
+            IRepository<Comment> commentRepository,
+            INotificationServices notificationServices
+
         )
         {
             _mapper = mapper;
+            _followedMovieRepo = followedMovieRepo;
             _movieServics = movieService;
             _episodeServices = episodeServices;
             _commentRepo = commentRepository;
             _auth0Services = auth0Services;
+            _notificationServices = notificationServices;
         }
 
         public async Task<Result<CommentDTO>> CreateMovieComment(CreateMovieCommentRequestDTO commentRequestDTO, string userId)
@@ -51,6 +57,13 @@ namespace MyMovieWeb.Application.Services
                 return Result<CommentDTO>.Failure(result.Message);
             }
             commentDTO.User = userResult.Data;
+
+            List<string> userIds = (await _followedMovieRepo.FindAllAsync(fm => fm.MovieId == commentDTO.MovieId))
+                .Where(fm => fm.UserId != userId)
+                .Select(fm => fm.UserId)
+                .ToList();
+
+            await _notificationServices.AddNotifications(userIds, $"Một người dùng đã bình luận phim {result.Data.Title} mà bạn quan tâm", $"/details/{result.Data.Id}");
 
             return Result<CommentDTO>.Success(commentDTO, "Comment created successfully");
         }
