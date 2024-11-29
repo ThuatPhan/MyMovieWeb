@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
-using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
@@ -12,34 +11,34 @@ namespace MyMovieWeb.Application.Services
     public class EpisodeServices : IEpisodeServices
     {
         private readonly IMapper _mapper;
-        private readonly FileUploadHelper _uploadHelper;
         private readonly IRepository<Episode> _episodeRepo;
         private readonly IRepository<Movie> _movieRepository;
         private readonly IRepository<Comment> _commentRepo;
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly INotificationServices _notificationServices;
+        private readonly IS3Services _s3Service;
 
         public EpisodeServices(
             IMapper mapper,
-            FileUploadHelper uploadHelper,
             IRepository<Movie> movieRepository,
             IRepository<Episode> episodeRepo,
             IRepository<Comment> commentRepository,
             IRepository<WatchHistory> watchHistoryRepository,
             IRepository<FollowedMovie> followedMovieRepository,
-            INotificationServices notificationServices
+            INotificationServices notificationServices,
+            IS3Services s3Services
 
         )
         {
             _mapper = mapper;
-            _uploadHelper = uploadHelper;
             _episodeRepo = episodeRepo;
             _movieRepository = movieRepository;
             _commentRepo = commentRepository;
             _watchHistoryRepo = watchHistoryRepository;
             _followedMovieRepo = followedMovieRepository;
             _notificationServices = notificationServices;
+            _s3Service = s3Services;
         }
 
         public async Task<Result<EpisodeDTO>> CreateEpisode(CreateEpisodeRequestDTO episodeRequestDTO)
@@ -60,10 +59,10 @@ namespace MyMovieWeb.Application.Services
             Episode newEpisode = _mapper.Map<Episode>(episodeRequestDTO);
             newEpisode.EpisodeNumber = episodeNumber;
 
-            string videoUrl = await _uploadHelper.UploadVideoAsync(episodeRequestDTO.VideoFile);
+            string videoUrl = await _s3Service.UploadFileAsync(episodeRequestDTO.VideoFile);
             newEpisode.VideoUrl = videoUrl;
 
-            string thumbnailUrl = await _uploadHelper.UploadImageAsync(episodeRequestDTO.ThumbnailFile);
+            string thumbnailUrl = await _s3Service.UploadFileAsync(episodeRequestDTO.ThumbnailFile);
             newEpisode.ThumbnailUrl = thumbnailUrl;
 
             Episode createdEpisode = await _episodeRepo.AddAsync(newEpisode);
@@ -89,14 +88,12 @@ namespace MyMovieWeb.Application.Services
             }
             if (episodeRequestDTO.VideoFile != null)
             {
-                await _uploadHelper.DeleteVideoFileAsync(episodeToUpdate.VideoUrl);
-                string videoUrl = await _uploadHelper.UploadVideoAsync(episodeRequestDTO.VideoFile);
+                string videoUrl = await _s3Service.UploadFileAsync(episodeRequestDTO.VideoFile);
                 episodeToUpdate.VideoUrl = videoUrl;
             }
             if (episodeRequestDTO.ThumbnailFile != null)
             {
-                await _uploadHelper.DeleteImageFileAsync(episodeToUpdate.ThumbnailUrl);
-                string thumbnailUrl = await _uploadHelper.UploadImageAsync(episodeRequestDTO.ThumbnailFile);
+                string thumbnailUrl = await _s3Service.UploadFileAsync(episodeRequestDTO.ThumbnailFile);
                 episodeToUpdate.ThumbnailUrl = thumbnailUrl;
             }
 
@@ -116,8 +113,8 @@ namespace MyMovieWeb.Application.Services
             }
 
             var deleteFileTasks = Task.WhenAll(
-                _uploadHelper.DeleteVideoFileAsync(episodeToDelete.VideoUrl),
-                _uploadHelper.DeleteImageFileAsync(episodeToDelete.ThumbnailUrl)
+                _s3Service.DeleteFileAsync(episodeToDelete.VideoUrl),
+                _s3Service.DeleteFileAsync(episodeToDelete.ThumbnailUrl)
             );
 
             var deleteDataTasks = Task.WhenAll(
@@ -145,8 +142,8 @@ namespace MyMovieWeb.Application.Services
             var deleteTasks = new List<Task>();
             foreach (var episode in episodesOfMovie)
             {
-                deleteTasks.Add(_uploadHelper.DeleteImageFileAsync(episode.ThumbnailUrl));
-                deleteTasks.Add(_uploadHelper.DeleteVideoFileAsync(episode.VideoUrl));
+                deleteTasks.Add(_s3Service.DeleteFileAsync(episode.ThumbnailUrl));
+                deleteTasks.Add(_s3Service.DeleteFileAsync(episode.VideoUrl));
             }
             await Task.WhenAll(deleteTasks);
 

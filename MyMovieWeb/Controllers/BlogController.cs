@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
-using MyMovieWeb.Application;
 using MyMovieWeb.Application.Interfaces;
-using MyMovieWeb.Application.Services;
 using MyMovieWeb.Presentation.Response;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -24,7 +22,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-       // [Authorize(Policy = "create:blog")]
+        // [Authorize(Policy = "create:blog")]
         public async Task<ActionResult<ApiResponse<BlogPostDTO>>> CreateBlog([FromForm] CreateBlogRequestDTO blogRequestDTO)
         {
             try
@@ -48,7 +46,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-       // [Authorize(Policy = "update:blog")]
+        // [Authorize(Policy = "update:blog")]
         public async Task<ActionResult<ApiResponse<BlogPostDTO>>> UpdateBlogPost([FromRoute] int id, [FromForm] UpdateBlogRequestDTO blogRequestDTO)
         {
             try

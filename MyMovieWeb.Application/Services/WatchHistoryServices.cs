@@ -236,8 +236,7 @@ namespace MyMovieWeb.Application.Services
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize);
 
-            List<WatchHistory> watchHistories = await query
-                .ToListAsync();
+            List<WatchHistory> watchHistories = await query.ToListAsync();
 
             List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
 

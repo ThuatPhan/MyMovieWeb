@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
@@ -78,6 +77,7 @@ builder.Services.AddScoped<IBlogTagService, BlogTagService>();
 builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();
 builder.Services.AddSingleton<IMessageServices, MessageServices>();
+builder.Services.AddSingleton<IS3Services, S3Services>();
 
 
 builder.Services.AddControllers();
