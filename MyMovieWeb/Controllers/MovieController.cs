@@ -483,10 +483,12 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+
         [HttpGet("recommended")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecommendedMovies(
              [FromQuery] int watchedMovieId,
-             [FromQuery] int topMovie )
+             [FromQuery] int topMovie 
+        )
         {
             try
             {

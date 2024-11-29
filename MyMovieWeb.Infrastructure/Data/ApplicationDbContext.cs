@@ -16,7 +16,6 @@ namespace MyMovieWeb.Infrastructure.Data
         public DbSet<BlogPost> BlogPosts { get; set; }
         public DbSet<BlogTag> BlogTags { get; set; }
         public DbSet<BlogPostTag> BlogPostTags { get; set; }
-
         public DbSet<Notification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

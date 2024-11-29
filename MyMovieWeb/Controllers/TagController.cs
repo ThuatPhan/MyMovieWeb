@@ -20,6 +20,29 @@ namespace MyMovieWeb.Presentation.Controllers
             _tagServices = tagServices;
         }
 
+        [HttpPost]
+        //[Authorize(Policy = "create:tag")]
+        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> CreateTag([FromBody] BlogTagRequestDTO tagRequestDTO)
+        {
+            try
+            {
+                Result<BlogTagDTO> result = await _tagServices.CreateTag(tagRequestDTO);
+                return CreatedAtAction(
+                    nameof(GetTagById),
+                    new { id = result.Data.Id },
+                    ApiResponse<BlogTagDTO>.SuccessResponse(result.Data, result.Message)
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<BlogTagDTO>.FailureResponse("An error occurred while creating tags")
+                );
+            }
+        }
+
         [HttpPut("{id}")]
         //[Authorize(Policy = "update:tag")]
         public async Task<ActionResult<ApiResponse<BlogTagDTO>>> UpdateTag([FromRoute] int id, [FromBody] BlogTagRequestDTO tagRequestDTO)
@@ -42,32 +65,10 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
-        [HttpPost]
-        //[Authorize(Policy = "create:tag")]
-        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> CreateTag([FromBody] BlogTagRequestDTO tagRequestDTO)
-        {
-            try
-            {
-                Result<BlogTagDTO> result = await _tagServices.CreateTag(tagRequestDTO);
-                return CreatedAtAction(
-                    nameof(GetGenreById),
-                    new { id = result.Data.Id },
-                    ApiResponse<BlogTagDTO>.SuccessResponse(result.Data, result.Message)
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    ApiResponse<BlogTagDTO>.FailureResponse("An error occurred while creating tags")
-                );
-            }
-        }
-
+        
         [HttpDelete("{id}")]
         //[Authorize(Policy = "delete:tag")]
-        public async Task<ActionResult<ApiResponse<bool>>> DeleteGenre([FromRoute] int id)
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteTag([FromRoute] int id)
         {
             try
             {
@@ -89,7 +90,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> GetGenreById([FromRoute] int id)
+        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> GetTagById([FromRoute] int id)
         {
             try
             {
@@ -111,7 +112,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<BlogTagDTO>>>> GetAllGenres()
+        public async Task<ActionResult<ApiResponse<List<BlogTagDTO>>>> GetAllTags()
         {
             try
             {
@@ -147,7 +148,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("paged")]
-        public async Task<ActionResult<ApiResponse<List<BlogTagDTO>>>> GetGenresPaged([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<BlogTagDTO>>>> GetAllTags([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
