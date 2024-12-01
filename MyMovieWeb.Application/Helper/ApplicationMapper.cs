@@ -13,29 +13,34 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<GenreRequestDTO, Genre>();
             CreateMap<Genre, GenreDTO>();
 
-            //BlogTag
-            CreateMap<BlogTagRequestDTO,BlogTag>();
-            CreateMap<BlogTag, BlogTagDTO>();
+            //Tag
+            CreateMap<TagRequestDTO, Tag>();
+            CreateMap<Tag, TagDTO>();
 
 
-            //BlogPost
-            CreateMap<CreateBlogRequestDTO, BlogPost>()
-                .ForMember(dest => dest.BlogPostTags, opt => opt.MapFrom(src => src.TagIds.Select(id => new BlogPostTag
+            //Post
+            CreateMap<CreatePostRequestDTO, Post>()
+                .ForMember(dest => dest.PostTags, opt => opt.MapFrom(src => src.TagIds.Select(id => new PostTags
                 {
-                    BlogTagId = id
+                    TagId = id
                 })));
-                
-
-            CreateMap<UpdateBlogRequestDTO, BlogPost>()
-                .ForMember(dest => dest.BlogPostTags, opt => opt.MapFrom(src => src.TagIds.Select(id => new BlogPostTag
+            CreateMap<UpdatePostRequestDTO, Post>()
+                .ForMember(dest => dest.PostTags, opt => opt.MapFrom(src => src.TagIds.Select(id => new PostTags
                 {
-                    BlogTagId = id
-                })));
-            CreateMap<BlogPost, BlogPostDTO>()
-                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.BlogPostTags.Select(mg => new BlogPostTagDTO
+                    TagId = id
+                })))
+                .BeforeMap((src, dest) =>
                 {
-                    BlogTagId = mg.BlogTagId,
-                    TagName = mg.BlogTag.Name
+                    if (src.IsShow.HasValue)
+                    {
+                        dest.IsShow = src.IsShow.Value;
+                    }
+                });
+            CreateMap<Post, PostDTO>()
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.PostTags.Select(mg => new PostTagDTO
+                {
+                    TagId = mg.TagId,
+                    TagName = mg.Tag.Name
                 }).ToList()));
 
             //Movie

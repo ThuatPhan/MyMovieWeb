@@ -12,8 +12,8 @@ using MyMovieWeb.Infrastructure.Data;
 namespace MyMovieWeb.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241129081825_updateBlogPost")]
-    partial class updateBlogPost
+    [Migration("20241129095619_AlterTablePostTag")]
+    partial class AlterTablePostTag
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,69 +24,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("MyMovieWeb.Domain.Entities.BlogPost", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsShow")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Thumbnail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BlogPosts");
-                });
-
-            modelBuilder.Entity("MyMovieWeb.Domain.Entities.BlogPostTag", b =>
-                {
-                    b.Property<int>("BlogPostId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("BlogTagId")
-                        .HasColumnType("int");
-
-                    b.HasKey("BlogPostId", "BlogTagId");
-
-                    b.HasIndex("BlogTagId");
-
-                    b.ToTable("BlogPostTags");
-                });
-
-            modelBuilder.Entity("MyMovieWeb.Domain.Entities.BlogTag", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BlogTags");
-                });
 
             modelBuilder.Entity("MyMovieWeb.Domain.Entities.Comment", b =>
                 {
@@ -229,6 +166,9 @@ namespace MyMovieWeb.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSeries")
                         .HasColumnType("bit");
 
@@ -241,6 +181,9 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.Property<string>("PosterUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("RateCount")
                         .HasColumnType("int");
@@ -281,6 +224,102 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.ToTable("MovieGenres");
                 });
 
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Url")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.Post", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsShow")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Thumbnail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.PostTags", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TagId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PostId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("PostTags");
+                });
+
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.Tag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsShow")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tags");
+                });
+
             modelBuilder.Entity("MyMovieWeb.Domain.Entities.WatchHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -294,6 +333,9 @@ namespace MyMovieWeb.Infrastructure.Migrations
 
                     b.Property<int?>("EpisodeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsWatched")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("LogDate")
                         .HasColumnType("datetime2");
@@ -310,25 +352,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.HasIndex("MovieId");
 
                     b.ToTable("WatchHistories");
-                });
-
-            modelBuilder.Entity("MyMovieWeb.Domain.Entities.BlogPostTag", b =>
-                {
-                    b.HasOne("MyMovieWeb.Domain.Entities.BlogPost", "BlogPost")
-                        .WithMany("BlogPostTags")
-                        .HasForeignKey("BlogPostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MyMovieWeb.Domain.Entities.BlogTag", "BlogTag")
-                        .WithMany("BlogPostTags")
-                        .HasForeignKey("BlogTagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BlogPost");
-
-                    b.Navigation("BlogTag");
                 });
 
             modelBuilder.Entity("MyMovieWeb.Domain.Entities.Comment", b =>
@@ -389,6 +412,25 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.Navigation("Movie");
                 });
 
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.PostTags", b =>
+                {
+                    b.HasOne("MyMovieWeb.Domain.Entities.Post", "Post")
+                        .WithMany("PostTags")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MyMovieWeb.Domain.Entities.Tag", "Tag")
+                        .WithMany("PostTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("Tag");
+                });
+
             modelBuilder.Entity("MyMovieWeb.Domain.Entities.WatchHistory", b =>
                 {
                     b.HasOne("MyMovieWeb.Domain.Entities.Movie", "Movie")
@@ -398,16 +440,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Movie");
-                });
-
-            modelBuilder.Entity("MyMovieWeb.Domain.Entities.BlogPost", b =>
-                {
-                    b.Navigation("BlogPostTags");
-                });
-
-            modelBuilder.Entity("MyMovieWeb.Domain.Entities.BlogTag", b =>
-                {
-                    b.Navigation("BlogPostTags");
                 });
 
             modelBuilder.Entity("MyMovieWeb.Domain.Entities.Genre", b =>
@@ -420,6 +452,16 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.Navigation("Episodes");
 
                     b.Navigation("MovieGenres");
+                });
+
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.Post", b =>
+                {
+                    b.Navigation("PostTags");
+                });
+
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.Tag", b =>
+                {
+                    b.Navigation("PostTags");
                 });
 #pragma warning restore 612, 618
         }
