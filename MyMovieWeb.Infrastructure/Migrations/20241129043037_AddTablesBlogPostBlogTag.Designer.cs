@@ -12,8 +12,8 @@ using MyMovieWeb.Infrastructure.Data;
 namespace MyMovieWeb.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241129081825_updateBlogPost")]
-    partial class updateBlogPost
+    [Migration("20241129043037_AddTablesBlogPostBlogTag")]
+    partial class AddTablesBlogPostBlogTag
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,9 +39,6 @@ namespace MyMovieWeb.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsShow")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Thumbnail")
                         .IsRequired()
@@ -229,6 +226,9 @@ namespace MyMovieWeb.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSeries")
                         .HasColumnType("bit");
 
@@ -241,6 +241,9 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.Property<string>("PosterUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("RateCount")
                         .HasColumnType("int");
@@ -281,6 +284,36 @@ namespace MyMovieWeb.Infrastructure.Migrations
                     b.ToTable("MovieGenres");
                 });
 
+            modelBuilder.Entity("MyMovieWeb.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Url")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("MyMovieWeb.Domain.Entities.WatchHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -294,6 +327,9 @@ namespace MyMovieWeb.Infrastructure.Migrations
 
                     b.Property<int?>("EpisodeId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsWatched")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("LogDate")
                         .HasColumnType("datetime2");

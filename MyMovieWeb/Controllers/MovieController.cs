@@ -118,35 +118,6 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("watch")]
-        [AllowAnonymous]
-        public async Task<ActionResult<ApiResponse<MovieDTO>>> WatchMovie([FromQuery] int id)
-        {
-            try
-            {
-                bool hasToken = false;
-                if (Request.Headers.TryGetValue("Authorization", out var token))
-                {
-                    hasToken = !token.IsNullOrEmpty();
-                }
-
-                Result<MovieDTO> result = await _movieServices.GetMovieToWatch(id, hasToken);
-                if (!result.IsSuccess)
-                {
-                    return NotFound(ApiResponse<MovieDTO>.FailureResponse(result.Message));
-                }
-                return Ok(ApiResponse<MovieDTO>.SuccessResponse(result.Data, result.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    ApiResponse<MovieDTO>.FailureResponse("An error occurred when retrieving movie")
-                );
-            }
-        }
-
         [HttpGet]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetAllMovies(
             [FromQuery] int pageNumber,
@@ -483,10 +454,12 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+
         [HttpGet("recommended")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecommendedMovies(
              [FromQuery] int watchedMovieId,
-             [FromQuery] int topMovie )
+             [FromQuery] int topMovie 
+        )
         {
             try
             {

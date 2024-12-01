@@ -22,8 +22,8 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
-        private readonly FileUploadHelper _uploadHelper;
         private readonly IMessageServices _messageServices;
+        private readonly IS3Services _s3Services;
 
         public MovieServices(
             IMapper mapper,
@@ -33,12 +33,11 @@ namespace MyMovieWeb.Application.Services
             IRepository<FollowedMovie> followedMovieRepository,
             IRepository<WatchHistory> watchHistoryRepository,
             IEpisodeServices episodeServices,
-            FileUploadHelper uploadHelper,
-            IMessageServices messageServices
+            IMessageServices messageServices,
+            IS3Services s3Services
         )
         {
             _mapper = mapper;
-            _uploadHelper = uploadHelper;
             _genreRepo = genreRepository;
             _movieRepo = movieRepo;
             _commentRepo = commentRepository;
@@ -46,6 +45,7 @@ namespace MyMovieWeb.Application.Services
             _watchHistoryRepo = watchHistoryRepository;
             _episodeServices = episodeServices;
             _messageServices = messageServices;
+            _s3Services = s3Services;
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
@@ -66,15 +66,15 @@ namespace MyMovieWeb.Application.Services
                 return Result<MovieDTO>.Failure($"Genre id(s) {invalidGenreIds} are not defined");
             }
 
-            string posterUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.PosterFile);
+            string posterUrl = await _s3Services.UploadFileAsync(movieRequestDTO.PosterFile);
             movieToCreate.PosterUrl = posterUrl;
 
-            string bannerUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.BannerFile);
+            string bannerUrl = await _s3Services.UploadFileAsync(movieRequestDTO.BannerFile);
             movieToCreate.BannerUrl = bannerUrl;
 
             if (!movieToCreate.IsSeries && movieRequestDTO.VideoFile != null)
             {
-                string videoUrl = await _uploadHelper.UploadVideoAsync(movieRequestDTO.VideoFile);
+                string videoUrl = await _s3Services.UploadFileAsync(movieRequestDTO.VideoFile);
                 movieToCreate.VideoUrl = videoUrl;
             }
 
@@ -113,22 +113,19 @@ namespace MyMovieWeb.Application.Services
 
             if (movieRequestDTO.PosterFile != null)
             {
-                await _uploadHelper.DeleteImageFileAsync(movieToUpdate.PosterUrl);
-                string posterUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.PosterFile);
+                string posterUrl = await _s3Services.UploadFileAsync(movieRequestDTO.PosterFile);
                 movieToUpdate.PosterUrl = posterUrl;
             }
 
             if (movieRequestDTO.BannerFile != null)
             {
-                await _uploadHelper.DeleteImageFileAsync(movieToUpdate.BannerUrl);
-                string bannerUrl = await _uploadHelper.UploadImageAsync(movieRequestDTO.BannerFile);
+                string bannerUrl = await _s3Services.UploadFileAsync(movieRequestDTO.BannerFile);
                 movieToUpdate.BannerUrl = bannerUrl;
             }
 
             if (!movieToUpdate.IsSeries && movieRequestDTO.VideoFile != null)
             {
-                await _uploadHelper.DeleteVideoFileAsync(movieToUpdate.VideoUrl!);
-                string videoUrl = await _uploadHelper.UploadVideoAsync(movieRequestDTO.VideoFile);
+                string videoUrl = await _s3Services.UploadFileAsync(movieRequestDTO.VideoFile);
                 movieToUpdate.VideoUrl = videoUrl;
             }
 
@@ -163,8 +160,8 @@ namespace MyMovieWeb.Application.Services
             await _episodeServices.DeleteEpisodeOfMovie(id);
 
             var deleteFileTasks = Task.WhenAll(
-                _uploadHelper.DeleteImageFileAsync(movieToDelete.PosterUrl),
-                _uploadHelper.DeleteImageFileAsync(movieToDelete.BannerUrl)
+                _s3Services.DeleteFileAsync(movieToDelete.PosterUrl),
+                _s3Services.DeleteFileAsync(movieToDelete.BannerUrl)
             );
 
             await deleteDataTasks;
@@ -172,7 +169,7 @@ namespace MyMovieWeb.Application.Services
 
             if (movieToDelete.VideoUrl != null)
             {
-                await _uploadHelper.DeleteVideoFileAsync(movieToDelete.VideoUrl);
+                await _s3Services.DeleteFileAsync(movieToDelete.VideoUrl);
             }
 
             await _movieRepo.RemoveAsync(movieToDelete);
@@ -193,6 +190,29 @@ namespace MyMovieWeb.Application.Services
             Movie? movie = await query
                 .Include(m => m.MovieGenres)
                     .ThenInclude(mg => mg.Genre)
+                .Select(m => new Movie
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    IsPaid = m.IsPaid,
+                    Price = m.Price,
+                    Description = m.Description,
+                    Director = m.Director,
+                    Actors = m.Actors,
+                    PosterUrl = m.PosterUrl,
+                    BannerUrl = m.BannerUrl,
+                    IsSeries = m.IsSeries,
+                    IsSeriesCompleted = m.IsSeriesCompleted,
+                    VideoUrl = m.VideoUrl,
+                    View = m.View,
+                    RateCount = m.RateCount,
+                    RateTotal = m.RateTotal,
+                    IsShow = m.IsShow,
+                    ReleaseDate = m.ReleaseDate,
+                    Episodes = m.Episodes,
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
+                .ToList()
+                })
                 .FirstOrDefaultAsync();
 
             if (movie is null)
@@ -244,9 +264,37 @@ namespace MyMovieWeb.Application.Services
             IEnumerable<Movie> movies = await query
                 .Include(m => m.MovieGenres)
                     .ThenInclude(mg => mg.Genre)
+                .Select(m => new Movie
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    IsPaid = m.IsPaid,
+                    Price = m.Price,
+                    Description = m.Description,
+                    Director = m.Director,
+                    Actors = m.Actors,
+                    PosterUrl = m.PosterUrl,
+                    BannerUrl = m.BannerUrl,
+                    IsSeries = m.IsSeries,
+                    IsSeriesCompleted = m.IsSeriesCompleted,
+                    VideoUrl = m.VideoUrl,
+                    View = m.View,
+                    RateCount = m.RateCount,
+                    RateTotal = m.RateTotal,
+                    IsShow = m.IsShow,
+                    ReleaseDate = m.ReleaseDate,
+                    Episodes = m.Episodes,
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
+                .ToList()
+                })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
+            foreach (var movie in movies)
+            {
+                movie.MovieGenres = movie.MovieGenres.Where(mg => mg.Genre.IsShow).ToList();
+            }
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
@@ -283,6 +331,29 @@ namespace MyMovieWeb.Application.Services
             IEnumerable<Movie> movies = await moviesQuery
                 .Include(m => m.MovieGenres)
                     .ThenInclude(mg => mg.Genre)
+                .Select(m => new Movie
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    IsPaid = m.IsPaid,
+                    Price = m.Price,
+                    Description = m.Description,
+                    Director = m.Director,
+                    Actors = m.Actors,
+                    PosterUrl = m.PosterUrl,
+                    BannerUrl = m.BannerUrl,
+                    IsSeries = m.IsSeries,
+                    IsSeriesCompleted = m.IsSeriesCompleted,
+                    VideoUrl = m.VideoUrl,
+                    View = m.View,
+                    RateCount = m.RateCount,
+                    RateTotal = m.RateTotal,
+                    IsShow = m.IsShow,
+                    ReleaseDate = m.ReleaseDate,
+                    Episodes = m.Episodes,
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
+                .ToList()
+                })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -359,7 +430,8 @@ namespace MyMovieWeb.Application.Services
                 })
                 .OrderByDescending(group => group.ViewCount)
                 .Take(topCount);
-            var topMoviesData = await query.ToListAsync();
+            var topMoviesData = await query
+                .ToListAsync();
 
             var movieIds = topMoviesData
                 .Select(m => m.MovieId)
@@ -419,7 +491,33 @@ namespace MyMovieWeb.Application.Services
             List<int> movieIds = trendingMoviesData.Select(m => m.MovieId).ToList();
 
             IEnumerable<Movie> trendingMovies = await _movieRepo
-                .FindAllAsync(m => movieIds.Contains(m.Id));
+                .GetBaseQuery(m => movieIds.Contains(m.Id))
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+                .Select(m => new Movie
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    IsPaid = m.IsPaid,
+                    Price = m.Price,
+                    Description = m.Description,
+                    Director = m.Director,
+                    Actors = m.Actors,
+                    PosterUrl = m.PosterUrl,
+                    BannerUrl = m.BannerUrl,
+                    IsSeries = m.IsSeries,
+                    IsSeriesCompleted = m.IsSeriesCompleted,
+                    VideoUrl = m.VideoUrl,
+                    View = m.View,
+                    RateCount = m.RateCount,
+                    RateTotal = m.RateTotal,
+                    IsShow = m.IsShow,
+                    ReleaseDate = m.ReleaseDate,
+                    Episodes = m.Episodes,
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
+                .ToList()
+                })
+                .ToListAsync();
 
             trendingMovies = trendingMovies.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(trendingMovies);
@@ -469,12 +567,12 @@ namespace MyMovieWeb.Application.Services
             var movieDTOs = _mapper.Map<List<MovieDTO>>(sortedMovies);
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies with latest comments retrieved successfully.");
         }
-        
+
         public async Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId, int topMovie)
         {
             try
             {
-               
+
                 var userLogDates = await _watchHistoryRepo
                     .GetBaseQuery(wh => wh.MovieId == movieId)
                     .Select(wh => new { wh.UserId, wh.LogDate })
@@ -526,7 +624,5 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<MovieDTO>>.Failure($"An error occurred while retrieving movies: {ex.Message}");
             }
         }
-
-
     }
 }

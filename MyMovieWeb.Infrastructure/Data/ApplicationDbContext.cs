@@ -13,11 +13,11 @@ namespace MyMovieWeb.Infrastructure.Data
         public DbSet<FollowedMovie> FollowedMovies { get; set; }
         public DbSet<WatchHistory> WatchHistories { get; set; }
         public DbSet<Comment> Comments { get; set; }
-        public DbSet<BlogPost> BlogPosts { get; set; }
-        public DbSet<BlogTag> BlogTags { get; set; }
-        public DbSet<BlogPostTag> BlogPostTags { get; set; }
-
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<PostTags> PostTags { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Order> Orders { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configure many-to-many relationship
@@ -34,18 +34,18 @@ namespace MyMovieWeb.Infrastructure.Data
                 .WithMany(g => g.MovieGenres)
                 .HasForeignKey(mg => mg.GenreId);
 
-            modelBuilder.Entity<BlogPostTag>()
-                .HasKey(mg => new { mg.BlogPostId, mg.BlogTagId });
+            modelBuilder.Entity<PostTags>()
+                .HasKey(mg => new { mg.PostId, mg.TagId });
 
-            modelBuilder.Entity<BlogPostTag>()
-                .HasOne(mg => mg.BlogPost)
-                .WithMany(m => m.BlogPostTags)
-                .HasForeignKey(mg => mg.BlogPostId);
+            modelBuilder.Entity<PostTags>()
+                .HasOne(mg => mg.Post)
+                .WithMany(m => m.PostTags)
+                .HasForeignKey(mg => mg.PostId);
 
-            modelBuilder.Entity<BlogPostTag>()
-                .HasOne(mg => mg.BlogTag)
-                .WithMany(g => g.BlogPostTags)
-                .HasForeignKey(mg => mg.BlogTagId);
+            modelBuilder.Entity<PostTags>()
+                .HasOne(mg => mg.Tag)
+                .WithMany(g => g.PostTags)
+                .HasForeignKey(mg => mg.TagId);
         }
     }
 }

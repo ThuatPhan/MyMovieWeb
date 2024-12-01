@@ -2,12 +2,12 @@
 
 namespace MyMovieWeb.Application.DTOs.Requests
 {
-    public class UpdateBlogRequestDTO
+    public class CreatePostRequestDTO
     {
         public string Title { get; set; }
         public string Content { get; set; }
         public List<int> TagIds { get; set; }
         public bool? IsShow { get; set; } = true;
-        public IFormFile Thumbnail { get; set; }
+        public required IFormFile Thumbnail { get; set; }
     }
 }

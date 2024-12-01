@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
@@ -30,7 +29,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("RDSConnection")));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -62,10 +61,11 @@ builder.Services.AddScoped<IRepository<Episode>, Repository<Episode>>();
 builder.Services.AddScoped<IRepository<Comment>, Repository<Comment>>();
 builder.Services.AddScoped<IRepository<FollowedMovie>, Repository<FollowedMovie>>();
 builder.Services.AddScoped<IRepository<WatchHistory>, Repository<WatchHistory>>();
-builder.Services.AddScoped<IRepository<BlogPost>, Repository<BlogPost>>();
-builder.Services.AddScoped<IRepository<BlogTag>, Repository<BlogTag>>();
-builder.Services.AddScoped<IRepository<BlogPostTag>, Repository<BlogPostTag>>();
+builder.Services.AddScoped<IRepository<Post>, Repository<Post>>();
+builder.Services.AddScoped<IRepository<Tag>, Repository<Tag>>();
+builder.Services.AddScoped<IRepository<PostTags>, Repository<PostTags>>();
 builder.Services.AddScoped<IRepository<Notification>, Repository<Notification>>();
+builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
 
 builder.Services.AddScoped<IAuth0Services, Auth0Services>();
 builder.Services.AddScoped<IGenreServices, GenreServices>();
@@ -74,10 +74,12 @@ builder.Services.AddScoped<IEpisodeServices, EpisodeServices>();
 builder.Services.AddScoped<IWatchHistoryServices, WatchHistoryServices>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<IBlogTagService, BlogTagService>();
-builder.Services.AddScoped<IBlogPostService, BlogPostService>();
+builder.Services.AddScoped<ITagServices, TagService>();
+builder.Services.AddScoped<IPostServices, PostService>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();
 builder.Services.AddSingleton<IMessageServices, MessageServices>();
+builder.Services.AddSingleton<IS3Services, S3Services>();
+builder.Services.AddScoped<IOrderServices, OrderServices>();
 
 
 builder.Services.AddControllers();
@@ -145,6 +147,10 @@ builder.Services
      });
 
 var app = builder.Build();
+app.MapGet("/", async (context) =>
+{
+    await context.Response.WriteAsync("Hello, World!");
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
