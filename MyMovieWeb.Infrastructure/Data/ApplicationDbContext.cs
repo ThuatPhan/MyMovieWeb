@@ -17,6 +17,7 @@ namespace MyMovieWeb.Infrastructure.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<PostTags> PostTags { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Order> Orders { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configure many-to-many relationship

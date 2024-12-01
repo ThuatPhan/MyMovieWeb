@@ -65,6 +65,7 @@ builder.Services.AddScoped<IRepository<Post>, Repository<Post>>();
 builder.Services.AddScoped<IRepository<Tag>, Repository<Tag>>();
 builder.Services.AddScoped<IRepository<PostTags>, Repository<PostTags>>();
 builder.Services.AddScoped<IRepository<Notification>, Repository<Notification>>();
+builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
 
 builder.Services.AddScoped<IAuth0Services, Auth0Services>();
 builder.Services.AddScoped<IGenreServices, GenreServices>();
@@ -78,6 +79,7 @@ builder.Services.AddScoped<IPostServices, PostService>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();
 builder.Services.AddSingleton<IMessageServices, MessageServices>();
 builder.Services.AddSingleton<IS3Services, S3Services>();
+builder.Services.AddScoped<IOrderServices, OrderServices>();
 
 
 builder.Services.AddControllers();
