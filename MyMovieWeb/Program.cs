@@ -145,6 +145,10 @@ builder.Services
      });
 
 var app = builder.Build();
+app.MapGet("/", async (context) =>
+{
+    await context.Response.WriteAsync("Hello, World!");
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
