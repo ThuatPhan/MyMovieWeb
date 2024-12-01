@@ -13,8 +13,8 @@ namespace MyMovieWeb.Presentation.Controllers
     public class TagController : Controller
     {
         private readonly ILogger<TagController> _logger;
-        private readonly IBlogTagService _tagServices;
-        public TagController(ILogger<TagController> logger, IBlogTagService tagServices)
+        private readonly ITagServices _tagServices;
+        public TagController(ILogger<TagController> logger, ITagServices tagServices)
         {
             _logger = logger;
             _tagServices = tagServices;
@@ -22,15 +22,15 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         //[Authorize(Policy = "create:tag")]
-        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> CreateTag([FromBody] BlogTagRequestDTO tagRequestDTO)
+        public async Task<ActionResult<ApiResponse<TagDTO>>> CreateTag([FromBody] TagRequestDTO tagRequestDTO)
         {
             try
             {
-                Result<BlogTagDTO> result = await _tagServices.CreateTag(tagRequestDTO);
+                Result<TagDTO> result = await _tagServices.CreateTag(tagRequestDTO);
                 return CreatedAtAction(
-                    nameof(GetTagById),
+                    nameof(GetTag),
                     new { id = result.Data.Id },
-                    ApiResponse<BlogTagDTO>.SuccessResponse(result.Data, result.Message)
+                    ApiResponse<TagDTO>.SuccessResponse(result.Data, result.Message)
                 );
             }
             catch (Exception ex)
@@ -38,30 +38,30 @@ namespace MyMovieWeb.Presentation.Controllers
                 _logger.LogError(ex.Message);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    ApiResponse<BlogTagDTO>.FailureResponse("An error occurred while creating tags")
+                    ApiResponse<TagDTO>.FailureResponse("An error occurred while creating tags")
                 );
             }
         }
 
         [HttpPut("{id}")]
         //[Authorize(Policy = "update:tag")]
-        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> UpdateTag([FromRoute] int id, [FromBody] BlogTagRequestDTO tagRequestDTO)
+        public async Task<ActionResult<ApiResponse<TagDTO>>> UpdateTag([FromRoute] int id, [FromBody] TagRequestDTO tagRequestDTO)
         {
             try
             {
-                Result<BlogTagDTO> result = await _tagServices.UpdateTag(id, tagRequestDTO);
+                Result<TagDTO> result = await _tagServices.UpdateTag(id, tagRequestDTO);
                 if (!result.IsSuccess)
                 {
-                    return NotFound(ApiResponse<BlogTagDTO>.FailureResponse(result.Message));
+                    return NotFound(ApiResponse<TagDTO>.FailureResponse(result.Message));
                 }
-                return Ok(ApiResponse<BlogTagDTO>.SuccessResponse(result.Data, result.Message));
+                return Ok(ApiResponse<TagDTO>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    ApiResponse<BlogTagDTO>.FailureResponse("An error occurred while updating tag")
+                    ApiResponse<TagDTO>.FailureResponse("An error occurred while updating tag")
                 );
             }
         }
@@ -90,41 +90,41 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse<BlogTagDTO>>> GetTagById([FromRoute] int id)
+        public async Task<ActionResult<ApiResponse<TagDTO>>> GetTag([FromRoute] int id)
         {
             try
             {
-                Result<BlogTagDTO> result = await _tagServices.GetTagById(id);
+                Result<TagDTO> result = await _tagServices.GetTagById(id);
                 if (!result.IsSuccess)
                 {
-                    return NotFound(ApiResponse<BlogTagDTO>.FailureResponse($"Tag id {id} not found"));
+                    return NotFound(ApiResponse<TagDTO>.FailureResponse($"Tag id {id} not found"));
                 }
-                return Ok(ApiResponse<BlogTagDTO>.SuccessResponse(result.Data, result.Message));
+                return Ok(ApiResponse<TagDTO>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    ApiResponse<BlogTagDTO>.FailureResponse("An error occurred while retrieving tag")
+                    ApiResponse<TagDTO>.FailureResponse("An error occurred while retrieving tag")
                 );
             }
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<BlogTagDTO>>>> GetAllTags()
+        public async Task<ActionResult<ApiResponse<List<TagDTO>>>> GetAllTags()
         {
             try
             {
-                Result<List<BlogTagDTO>> result = await _tagServices.GetAllTag();
-                return Ok(ApiResponse<List<BlogTagDTO>>.SuccessResponse(result.Data, result.Message));
+                Result<List<TagDTO>> result = await _tagServices.GetAllTags();
+                return Ok(ApiResponse<List<TagDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    ApiResponse<List<BlogTagDTO>>.FailureResponse("An error occurred while retrieving tags")
+                    ApiResponse<List<TagDTO>>.FailureResponse("An error occurred while retrieving tags")
                 );
             }
         }
@@ -142,25 +142,25 @@ namespace MyMovieWeb.Presentation.Controllers
                 _logger.LogError(ex.Message);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    ApiResponse<List<BlogTagDTO>>.FailureResponse("An error occurred while retrieving tags")
+                    ApiResponse<List<TagDTO>>.FailureResponse("An error occurred while retrieving tags")
                 );
             }
         }
 
         [HttpGet("paged")]
-        public async Task<ActionResult<ApiResponse<List<BlogTagDTO>>>> GetAllTags([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<TagDTO>>>> GetAllTags([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
-                Result<List<BlogTagDTO>> result = await _tagServices.GetAllTags(pageNumber, pageSize);
-                return Ok(ApiResponse<List<BlogTagDTO>>.SuccessResponse(result.Data, result.Message));
+                Result<List<TagDTO>> result = await _tagServices.GetAllTags(pageNumber, pageSize);
+                return Ok(ApiResponse<List<TagDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    ApiResponse<List<BlogTagDTO>>.FailureResponse("An error occurred while retrieving tags")
+                    ApiResponse<List<TagDTO>>.FailureResponse("An error occurred while retrieving tags")
                 );
             }
 
