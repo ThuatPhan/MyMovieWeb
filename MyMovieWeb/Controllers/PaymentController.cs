@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
+using MyMovieWeb.Presentation.Response;
 using Stripe;
 using Stripe.Checkout;
 using System.Security.Claims;
@@ -19,8 +20,8 @@ namespace MyMovieWeb.Presentation.Controllers
         private readonly IOrderServices _orderServices;
 
         public PaymentController(
-            ILogger<PaymentController> logger, 
-            IConfiguration configuration, 
+            ILogger<PaymentController> logger,
+            IConfiguration configuration,
             IOrderServices orderServices
         )
         {
@@ -32,7 +33,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost("create-checkout-session")]
         [Authorize]
-        public IActionResult CreateCheckoutSession([FromBody] CreatePaymentRequest paymentRequest)
+        public ActionResult<ApiResponse<string>> CreateCheckoutSession([FromBody] CreatePaymentRequest paymentRequest)
         {
             try
             {
@@ -69,7 +70,7 @@ namespace MyMovieWeb.Presentation.Controllers
                 var service = new SessionService();
                 var session = service.Create(options);
 
-                return Ok(new { url = session.Url });
+                return Ok(ApiResponse<string>.SuccessResponse(session.Url, "Session created successfully"));
             }
             catch (Exception ex)
             {

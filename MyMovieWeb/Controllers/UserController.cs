@@ -16,10 +16,10 @@ namespace MyMovieWeb.Presentation.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly IUserServices _userServices;
 
-        public UserController(IUserServices userServices, ILogger<UserController> logger)
+        public UserController(ILogger<UserController> logger, IUserServices userServices)
         {
-            _userServices = userServices;
             _logger = logger;
+            _userServices = userServices;
         }
 
 
@@ -169,11 +169,11 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<NotificationDTO> result = await _userServices.MarkNotificationAsRead(notificationId);
-                if(!result.IsSuccess)
+                if (!result.IsSuccess)
                 {
                     return BadRequest(ApiResponse<NotificationDTO>.FailureResponse(result.Message));
                 }
-                return Ok(ApiResponse<NotificationDTO>.SuccessResponse(result.Data, result.Message));   
+                return Ok(ApiResponse<NotificationDTO>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
@@ -199,6 +199,41 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 _logger.LogError(ex.Message);
                 return StatusCode(500, "An error occurred when retrieving notifcations");
+            }
+        }
+
+        [HttpGet("is-bought-movie")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<bool>>> CheckMovieBought([FromQuery] int movieId)
+        {
+            try
+            {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                var result = await _userServices.IsUserBoughtMovie(userId, movieId);
+
+                return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when rating movie");
+            }
+        }
+
+        [HttpGet("bought-movies")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetBoughtMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        {
+            try
+            {
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                var result = await _userServices.BoughtMovies(userId, pageNumber, pageSize);
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving bought movies");
             }
         }
     }

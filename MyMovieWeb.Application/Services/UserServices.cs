@@ -15,13 +15,15 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IMovieService _movieService;
         private readonly INotificationServices _notificationService;
+        private readonly IRepository<Order> _orderRepo;
 
         public UserServices(
-            IMapper mapper, 
-            IRepository<Comment> commentRepository, 
-            IRepository<FollowedMovie> followedMovieRepository, 
+            IMapper mapper,
+            IRepository<Comment> commentRepository,
+            IRepository<FollowedMovie> followedMovieRepository,
             IMovieService movieService,
-            INotificationServices notificationService
+            INotificationServices notificationService,
+            IRepository<Order> orderRepository
         )
         {
             _mapper = mapper;
@@ -29,6 +31,7 @@ namespace MyMovieWeb.Application.Services
             _followedMovieRepo = followedMovieRepository;
             _commentRepo = commentRepository;
             _notificationService = notificationService;
+            _orderRepo = orderRepository;
         }
 
         public async Task<Result<bool>> FollowMovie(int movieId, string userId)
@@ -97,7 +100,7 @@ namespace MyMovieWeb.Application.Services
 
             List<FollowedMovieDTO> followedMovieDTOs = _mapper.Map<List<FollowedMovieDTO>>(followedMovies);
 
-            foreach(var followedMovieDTO in followedMovieDTOs)
+            foreach (var followedMovieDTO in followedMovieDTOs)
             {
                 followedMovieDTO.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == followedMovieDTO.Id);
             }
@@ -128,6 +131,20 @@ namespace MyMovieWeb.Application.Services
         public Task<Result<bool>> DeleteNotification(int notificationId)
         {
             return _notificationService.DeleteNotification(notificationId);
+        }
+
+        public async Task<Result<bool>> IsUserBoughtMovie(string userId, int movieId)
+        {
+            var result = await _orderRepo.FindOneAsync(o => o.UserId == userId && o.MovieId == movieId);
+            return Result<bool>.Success(result != null, "Bought status retrieved successfully");
+        }
+
+        public async Task<Result<List<MovieDTO>>> BoughtMovies(string userId, int pageNumber, int pageSize)
+        {
+            var orders = await _orderRepo.FindAllAsync(o => o.UserId == userId);
+            var movieIds = orders.Select(o => o.MovieId).ToList();
+            var result = await _movieService.FindAllMovies(pageNumber, pageSize, predicate: m => movieIds.Contains(m.Id));
+            return Result<List<MovieDTO>>.Success(result.Data, "Bought movies retrieved successfully");
         }
     }
 }

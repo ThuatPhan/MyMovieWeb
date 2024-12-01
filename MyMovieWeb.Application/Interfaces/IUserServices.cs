@@ -14,5 +14,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<NotificationDTO>>> GetNotifications(string userId);
         Task<Result<NotificationDTO>> MarkNotificationAsRead(int notificationId);
         Task<Result<bool>> DeleteNotification(int notificationId);
+        Task<Result<bool>> IsUserBoughtMovie(string userId, int movieId);
+        Task<Result<List<MovieDTO>>> BoughtMovies (string userId, int pageNumber, int pageSize);
     }
 }
