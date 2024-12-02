@@ -220,14 +220,14 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("bought-movies")]
+        [HttpGet("purchased-movies")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetBoughtMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPủchasedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
                 string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                var result = await _userServices.BoughtMovies(userId, pageNumber, pageSize);
+                var result = await _userServices.PurchasedMovies(userId, pageNumber, pageSize);
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
