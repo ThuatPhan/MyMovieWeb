@@ -6,5 +6,6 @@ namespace MyMovieWeb.Application.Interfaces
     {
         Task CreateOrder(Order order);
         Task<Result<bool>> IsUserBoughtMovie(string userId, int movieId);
+        Task<Result<int>> CountMovieBoughtbyUser(string userId);
     }
 }
