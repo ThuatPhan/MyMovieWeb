@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
-using MyMovieWeb.Application.Services;
 using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Presentation.Response;
-using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
 {
@@ -27,7 +24,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        [Authorize(Policy = "create:movie")]
+        [Authorize(Policy = "create:data")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateMovie([FromForm] CreateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -51,7 +48,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-        [Authorize(Policy = "update:movie")]
+        [Authorize(Policy = "update:data")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> UpdateMovie([FromRoute] int id, [FromForm] UpdateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -74,7 +71,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "delete:movie")]
+        [Authorize(Policy = "delete:data")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteMovie([FromRoute] int id)
         {
             try
@@ -320,7 +317,7 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
-        
+
 
         [HttpGet("count-movies")]
         public async Task<ActionResult<ApiResponse<int>>> GetMoviesCount()
@@ -459,7 +456,7 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("recommended")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecommendedMovies(
              [FromQuery] int watchedMovieId,
-             [FromQuery] int topMovie 
+             [FromQuery] int topMovie
         )
         {
             try
@@ -481,6 +478,6 @@ namespace MyMovieWeb.Presentation.Controllers
                     ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred while retrieving recommended movies.")
                 );
             }
-        }     
+        }
     }
 }

@@ -22,7 +22,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "create:genre")]
+        [Authorize(Policy = "create:data")]
         public async Task<ActionResult<ApiResponse<GenreDTO>>> CreateGenre([FromBody] GenreRequestDTO genreRequestDTO)
         {
             try
@@ -45,7 +45,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "update:genre")]
+        [Authorize(Policy = "update:data")]
         public async Task<ActionResult<ApiResponse<GenreDTO>>> UpdateGenre([FromRoute] int id, [FromBody] GenreRequestDTO genreRequestDTO)
         {
             try
@@ -68,7 +68,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "delete:genre")]
+        [Authorize(Policy = "delete:data")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteGenre([FromRoute] int id)
         {
             try

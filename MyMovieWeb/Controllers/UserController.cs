@@ -31,7 +31,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<bool> result = await _userServices.FollowMovie(movieId, userId);
                 if (!result.IsSuccess)
                 {
@@ -53,7 +53,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<bool> result = await _userServices.UnfollowMovie(movieId, userId);
                 if (!result.IsSuccess)
                 {
@@ -75,7 +75,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<bool> result = await _userServices.IsUserFollowMovie(movieId, userId);
                 if (!result.IsSuccess)
                 {
@@ -97,7 +97,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<int> result = await _userServices.CountFollowedMovie(userId);
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
@@ -114,7 +114,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<List<FollowedMovieDTO>> result = await _userServices.GetFollowedMovies(userId, pageNumber, pageSize);
 
                 return Ok(ApiResponse<List<FollowedMovieDTO>>.SuccessResponse(result.Data, result.Message));
@@ -224,7 +224,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpGet("purchased-movies")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPủchasedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPurchasedMovies([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
             {
@@ -238,20 +238,20 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, "An error occurred when retrieving bought movies");
             }
         }
-        [HttpGet("count-movies-buy")]
+        [HttpGet("purchased-movies/count")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> CountMoviesBuybyUser()
         {
             try
             {
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
                 Result<int> result = await _orderServices.CountMovieBoughtbyUser(userId);
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when retrieving followed movie");
+                return StatusCode(500, "An error occurred when counting purchased movies");
             }
         }
 

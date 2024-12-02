@@ -21,10 +21,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5000") // Allowed origins
-                  .AllowAnyMethod() // Allow any HTTP method
-                  .AllowAnyHeader() // Allow any header
-                  .AllowCredentials(); // Allow credentials (cookies, etc.)
+            policy.WithOrigins("http://localhost:5000") 
+                  .AllowAnyMethod() 
+                  .AllowAnyHeader()
+                  .AllowCredentials();
         });
 });
 
@@ -43,10 +43,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 });
 builder.Services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
 
-
-
+//Stripe config
 StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Value;
-
 
 builder.Services.AddHttpClient<FileUploadHelper>();
 builder.Services.AddSingleton<FileUploadHelper>();
@@ -87,61 +85,26 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//Perrmission
 builder.Services
      .AddAuthorization(options =>
      {
          options.AddPolicy(
-           "create:genre",
+           "create:data",
            policy => policy.Requirements.Add(
-             new HasScopeRequirement("create:genre", $"https://{builder.Configuration["Auth0:Domain"]}/")
+             new HasScopeRequirement("create:data", $"https://{builder.Configuration["Auth0:Domain"]}/")
            )
          );
          options.AddPolicy(
-           "update:genre",
+           "update:data",
            policy => policy.Requirements.Add(
-             new HasScopeRequirement("update:genre", $"https://{builder.Configuration["Auth0:Domain"]}/")
+             new HasScopeRequirement("update:data", $"https://{builder.Configuration["Auth0:Domain"]}/")
            )
          );
          options.AddPolicy(
-           "delete:genre",
+           "delete:data",
            policy => policy.Requirements.Add(
-             new HasScopeRequirement("delete:genre", $"https://{builder.Configuration["Auth0:Domain"]}/")
-           )
-         );
-         options.AddPolicy(
-           "create:movie",
-           policy => policy.Requirements.Add(
-             new HasScopeRequirement("create:movie", $"https://{builder.Configuration["Auth0:Domain"]}/")
-           )
-         );
-         options.AddPolicy(
-           "update:movie",
-           policy => policy.Requirements.Add(
-             new HasScopeRequirement("update:movie", $"https://{builder.Configuration["Auth0:Domain"]}/")
-           )
-         );
-         options.AddPolicy(
-           "delete:movie",
-           policy => policy.Requirements.Add(
-             new HasScopeRequirement("delete:movie", $"https://{builder.Configuration["Auth0:Domain"]}/")
-           )
-         );
-         options.AddPolicy(
-           "create:episode",
-           policy => policy.Requirements.Add(
-             new HasScopeRequirement("create:episode", $"https://{builder.Configuration["Auth0:Domain"]}/")
-           )
-         );
-         options.AddPolicy(
-           "update:episode",
-           policy => policy.Requirements.Add(
-             new HasScopeRequirement("update:episode", $"https://{builder.Configuration["Auth0:Domain"]}/")
-           )
-         );
-         options.AddPolicy(
-           "delete:episode",
-           policy => policy.Requirements.Add(
-             new HasScopeRequirement("delete:episode", $"https://{builder.Configuration["Auth0:Domain"]}/")
+             new HasScopeRequirement("delete:data", $"https://{builder.Configuration["Auth0:Domain"]}/")
            )
          );
      });
