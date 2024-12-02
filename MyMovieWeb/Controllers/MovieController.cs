@@ -8,6 +8,7 @@ using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Application.Services;
 using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Presentation.Response;
+using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
 {
@@ -481,5 +482,32 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+
+        [HttpGet("purchased")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPurchasedMoviesByUser( [FromQuery] int pageNumber,[FromQuery] int pageSize)
+        {
+            try
+            {
+
+                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<List<MovieDTO>> result = await _movieServices.GetPurchasedMoviesByUser(userId, pageNumber, pageSize);
+
+                if (result.IsSuccess)
+                {
+                    return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+                }
+                else
+                {
+                    return BadRequest(ApiResponse<List<MovieDTO>>.FailureResponse(result.Message));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving purchased movies."));
+            }
+        }
+
     }
 }

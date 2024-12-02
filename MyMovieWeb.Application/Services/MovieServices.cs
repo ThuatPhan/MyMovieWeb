@@ -19,11 +19,13 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<Genre> _genreRepo;
         private readonly IRepository<Movie> _movieRepo;
         private readonly IRepository<Comment> _commentRepo;
+        private readonly IRepository<Order> _orderRepo;
         private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
         private readonly IMessageServices _messageServices;
         private readonly IS3Services _s3Services;
+      
 
         public MovieServices(
             IMapper mapper,
@@ -34,7 +36,9 @@ namespace MyMovieWeb.Application.Services
             IRepository<WatchHistory> watchHistoryRepository,
             IEpisodeServices episodeServices,
             IMessageServices messageServices,
-            IS3Services s3Services
+            IS3Services s3Services,
+            IRepository<Order> orderRepository
+
         )
         {
             _mapper = mapper;
@@ -46,6 +50,8 @@ namespace MyMovieWeb.Application.Services
             _episodeServices = episodeServices;
             _messageServices = messageServices;
             _s3Services = s3Services;
+            _orderRepo = orderRepository;
+            
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
@@ -624,5 +630,30 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<MovieDTO>>.Failure($"An error occurred while retrieving movies: {ex.Message}");
             }
         }
+
+        public async Task<Result<List<MovieDTO>>> GetPurchasedMoviesByUser(string userId, int pageNumber, int pageSize)
+        {
+            // Lấy danh sách các đơn hàng của người dùng đã mua phim
+            IQueryable<Order> query = _orderRepo.GetBaseQuery(o => o.UserId == userId);
+
+            IEnumerable<Order> orders = await query
+                .Include(o => o.Movie) // Bao gồm thông tin phim trong đơn hàng
+                .OrderBy(o => o.Movie.Title) // Sắp xếp theo tiêu đề phim (có thể thay đổi nếu cần)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            if (!orders.Any())
+            {
+                return Result<List<MovieDTO>>.Failure("No movies found for this user.");
+            }
+
+            // Chuyển đổi đơn hàng thành danh sách các MovieDTO
+            var movies = orders.Select(o => o.Movie).ToList();
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Purchased movies retrieved successfully.");
+        }
+
     }
 }
