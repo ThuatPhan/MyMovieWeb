@@ -1,4 +1,5 @@
-﻿using MyMovieWeb.Application.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
 
@@ -22,6 +23,13 @@ namespace MyMovieWeb.Application.Services
         {
             var result = await _orderRepo.FindOneAsync(o => o.UserId == userId && o.MovieId == movieId);
             return Result<bool>.Success(result != null, "Bought status retrieved successfully");
+        }
+
+        public async Task<Result<int>> CountMovieBoughtbyUser(string userId)
+        {
+            int totalMovie = await _orderRepo.GetBaseQuery(
+            o => o.UserId == userId && o.Movie.IsShow).CountAsync();
+            return Result<int>.Success(totalMovie, "Movie buy by user count retrived successfully");
         }
     }
 }

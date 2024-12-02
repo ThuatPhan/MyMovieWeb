@@ -15,11 +15,13 @@ namespace MyMovieWeb.Presentation.Controllers
     {
         private readonly ILogger<UserController> _logger;
         private readonly IUserServices _userServices;
+        private readonly IOrderServices _orderServices;
 
-        public UserController(ILogger<UserController> logger, IUserServices userServices)
+        public UserController(ILogger<UserController> logger, IUserServices userServices,IOrderServices orderServices)
         {
             _logger = logger;
             _userServices = userServices;
+            _orderServices = orderServices;
         }
 
 
@@ -236,5 +238,23 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, "An error occurred when retrieving bought movies");
             }
         }
+        [HttpGet("count-movies-buy")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> CountMoviesBuybyUser()
+        {
+            try
+            {
+                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+                Result<int> result = await _orderServices.CountMovieBoughtbyUser(userId);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when retrieving followed movie");
+            }
+        }
+
+
     }
 }
