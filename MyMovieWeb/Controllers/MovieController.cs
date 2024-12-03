@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
-using MyMovieWeb.Application.Services;
 using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Presentation.Response;
-using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
 {
@@ -27,7 +24,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        [Authorize(Policy = "create:movie")]
+        [Authorize(Policy = "create:data")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> CreateMovie([FromForm] CreateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -51,7 +48,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-        [Authorize(Policy = "update:movie")]
+        [Authorize(Policy = "update:data")]
         public async Task<ActionResult<ApiResponse<MovieDTO>>> UpdateMovie([FromRoute] int id, [FromForm] UpdateMovieRequestDTO movieRequestDTO)
         {
             try
@@ -74,7 +71,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "delete:movie")]
+        [Authorize(Policy = "delete:data")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteMovie([FromRoute] int id)
         {
             try
@@ -129,8 +126,8 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<List<MovieDTO>> result = includeHiddenMovie == true
-                    ? await _movieServices.FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title))
-                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow, m => m.OrderBy(m => m.Title));
+                    ? await _movieServices.FindAllMovies(pageNumber, pageSize, predicate: _ => true, orderBy: m => m.OrderByDescending(m => m.Id))
+                    : await _movieServices.FindAllMovies(pageNumber, pageSize, predicate: m => m.IsShow, orderBy: m => m.OrderBy(m => m.Title));
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
@@ -320,7 +317,7 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
-        
+
 
         [HttpGet("count-movies")]
         public async Task<ActionResult<ApiResponse<int>>> GetMoviesCount()
@@ -459,7 +456,7 @@ namespace MyMovieWeb.Presentation.Controllers
         [HttpGet("recommended")]
         public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetRecommendedMovies(
              [FromQuery] int watchedMovieId,
-             [FromQuery] int topMovie 
+             [FromQuery] int topMovie
         )
         {
             try
@@ -482,32 +479,5 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
-
-        [HttpGet("purchased")]
-        [Authorize]
-        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPurchasedMoviesByUser( [FromQuery] int pageNumber,[FromQuery] int pageSize)
-        {
-            try
-            {
-
-                string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                Result<List<MovieDTO>> result = await _movieServices.GetPurchasedMoviesByUser(userId, pageNumber, pageSize);
-
-                if (result.IsSuccess)
-                {
-                    return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
-                }
-                else
-                {
-                    return BadRequest(ApiResponse<List<MovieDTO>>.FailureResponse(result.Message));
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                return StatusCode(500, ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving purchased movies."));
-            }
-        }
-
     }
 }

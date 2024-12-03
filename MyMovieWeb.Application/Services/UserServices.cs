@@ -133,18 +133,32 @@ namespace MyMovieWeb.Application.Services
             return _notificationService.DeleteNotification(notificationId);
         }
 
-        public async Task<Result<bool>> IsUserBoughtMovie(string userId, int movieId)
+        public async Task<Result<bool>> IsPurchasedMovie(string userId, int movieId)
         {
             var result = await _orderRepo.FindOneAsync(o => o.UserId == userId && o.MovieId == movieId);
-            return Result<bool>.Success(result != null, "Bought status retrieved successfully");
+            return Result<bool>.Success(result != null, "Purchased status retrieved successfully");
         }
 
-        public async Task<Result<List<MovieDTO>>> BoughtMovies(string userId, int pageNumber, int pageSize)
+        public async Task<Result<List<MovieDTO>>> PurchasedMovies(string userId, int pageNumber, int pageSize)
         {
-            var orders = await _orderRepo.FindAllAsync(o => o.UserId == userId);
-            var movieIds = orders.Select(o => o.MovieId).ToList();
-            var result = await _movieService.FindAllMovies(pageNumber, pageSize, predicate: m => movieIds.Contains(m.Id));
-            return Result<List<MovieDTO>>.Success(result.Data, "Bought movies retrieved successfully");
+            IQueryable<Order> query = _orderRepo.GetBaseQuery(o => o.UserId == userId);
+
+            IEnumerable<Order> orders = await query
+                .Include(o => o.Movie)
+                .OrderBy(o => o.Movie.Title)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            if (!orders.Any())
+            {
+                return Result<List<MovieDTO>>.Failure("No movies found for this user.");
+            }
+
+            var movies = orders.Select(o => o.Movie).ToList();
+            List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Purchased movies retrieved successfully.");
         }
     }
 }

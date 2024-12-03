@@ -43,7 +43,13 @@ namespace MyMovieWeb.Application.Services
                 return Result<WatchHistoryDTO>.Failure(result.Message);
             }
 
-            await _movieServices.IncreaseView(result.Data.Id, 1);
+            var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId);
+
+            if (watched is null)
+            {
+                await _movieServices.IncreaseView(result.Data.Id, 1);
+            }
+
             await _watchHistoryRepo.AddAsync(watchHistory);
 
             WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
@@ -68,7 +74,14 @@ namespace MyMovieWeb.Application.Services
                 return Result<WatchHistoryDTO>.Failure(episodeResult.Message);
             }
 
-            await _movieServices.IncreaseView(movieResult.Data.Id, 1);
+
+            var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId);
+
+            if (watched is null)
+            {
+                await _movieServices.IncreaseView(movieResult.Data.Id, 1);
+            }
+
             await _watchHistoryRepo.AddAsync(watchHistory);
 
             WatchHistoryDTO watchHistoryDTO = _mapper.Map<WatchHistoryDTO>(watchHistory);
@@ -219,35 +232,6 @@ namespace MyMovieWeb.Application.Services
             return Result<WatchHistoryDTO>.Success(watchHistoryDTO, "Watch history retrieved sucessfully");
         }
 
-        public async Task<Result<List<WatchHistoryDTO>>> GetWatchingHistories(int pageNumber, int pageSize, string userId)
-        {
-            if (userId.IsNullOrEmpty())
-            {
-                return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
-            }
-
-            IQueryable<WatchHistory> query = _watchHistoryRepo
-                .GetBaseQuery(wh => wh.UserId == userId && !wh.IsWatched)
-                .Include(wh => wh.Movie)
-                    .ThenInclude(m => m.MovieGenres)
-                        .ThenInclude(mg => mg.Genre)
-                .GroupBy(wh => wh.MovieId)
-                .Select(group => group.OrderByDescending(group => group.LogDate).First())
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            List<WatchHistory> watchHistories = await query.ToListAsync();
-
-            List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
-
-            foreach (var watchHistoryDTO in watchHistoryDTOs)
-            {
-                watchHistoryDTO.Movie.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == watchHistoryDTO.Movie.Id);
-            }
-
-            return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories retrieved successfully");
-        }
-
         public async Task<Result<List<WatchHistoryDTO>>> GetWatchHistories(int pageNumber, int pageSize, string userId)
         {
             if (userId.IsNullOrEmpty())
@@ -277,5 +261,35 @@ namespace MyMovieWeb.Application.Services
 
             return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories retrieved successfully");
         }
+
+        public async Task<Result<List<WatchHistoryDTO>>> GetWatchingHistories(int pageNumber, int pageSize, string userId)
+        {
+            if (userId.IsNullOrEmpty())
+            {
+                return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
+            }
+
+            IQueryable<WatchHistory> query = _watchHistoryRepo
+                .GetBaseQuery(wh => wh.UserId == userId && !wh.IsWatched)
+                .Include(wh => wh.Movie)
+                    .ThenInclude(m => m.MovieGenres)
+                        .ThenInclude(mg => mg.Genre)
+                .GroupBy(wh => wh.MovieId)
+                .Select(group => group.OrderByDescending(group => group.LogDate).First())
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
+            List<WatchHistory> watchHistories = await query.ToListAsync();
+
+            List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
+
+            foreach (var watchHistoryDTO in watchHistoryDTOs)
+            {
+                watchHistoryDTO.Movie.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == watchHistoryDTO.Movie.Id);
+            }
+
+            return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories retrieved successfully");
+        }
+
     }
 }

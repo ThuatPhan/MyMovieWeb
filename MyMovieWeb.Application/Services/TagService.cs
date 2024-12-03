@@ -5,6 +5,7 @@ using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Services
 {
@@ -25,9 +26,9 @@ namespace MyMovieWeb.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<Result<int>> CountTag()
+        public async Task<Result<int>> CountTag(Expression<Func<Tag, bool>> predicate)
         {
-            int totalTagCount = await _tagRepo.CountAsync();
+            int totalTagCount = await _tagRepo.CountAsync(predicate);
             return Result<int>.Success(totalTagCount, "Total tag count retrieved successfully");
         }
 
@@ -38,6 +39,23 @@ namespace MyMovieWeb.Application.Services
             TagDTO tagDTO = _mapper.Map<TagDTO>(createdTag);
 
             return Result<TagDTO>.Success(tagDTO, "Tag created successfully");
+        }
+
+        public async Task<Result<TagDTO>> UpdateTag(int id, TagRequestDTO tagRequestDTO)
+        {
+            Tag? tagToUpdate = await _tagRepo.GetByIdAsync(id);
+
+            if (tagToUpdate is null)
+            {
+                return Result<TagDTO>.Failure($"Tag id {id} not found");
+            }
+
+            _mapper.Map(tagRequestDTO, tagToUpdate);
+
+            Tag updatedTag = await _tagRepo.UpdateAsync(tagToUpdate);
+            TagDTO tagDTO = _mapper.Map<TagDTO>(updatedTag);
+
+            return Result<TagDTO>.Success(tagDTO, "Tag updated successfully");
         }
 
         public async Task<Result<bool>> DeleteTag(int id)
@@ -60,28 +78,6 @@ namespace MyMovieWeb.Application.Services
             return Result<bool>.Success(true, "Tag deleted successfully");
         }
 
-        public async Task<Result<List<TagDTO>>> GetAllTags()
-        {
-            IEnumerable<Tag> tags = await _tagRepo.GetAllAsync();
-            List<TagDTO> tagDTOs = _mapper.Map<List<TagDTO>>(tags);
-
-            return Result<List<TagDTO>>.Success(tagDTOs, "Tags retrieved successfully");
-        }
-
-        public async Task<Result<List<TagDTO>>> GetAllTags(int pageNumber, int pageSize)
-        {
-            IQueryable<Tag> query = _tagRepo.GetBaseQuery(predicate: _ => true);
-
-            IEnumerable<Tag> tags = await query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            List<TagDTO> tagDTOs = _mapper.Map<List<TagDTO>>(tags);
-
-            return Result<List<TagDTO>>.Success(tagDTOs, "Tag retrieved successfully");
-        }
-
         public async Task<Result<TagDTO>> GetTagById(int id)
         {
             Tag? tag = await _tagRepo.GetByIdAsync(id);
@@ -96,21 +92,30 @@ namespace MyMovieWeb.Application.Services
             return Result<TagDTO>.Success(blogTagDTO, "Tag retrieved successfully");
         }
 
-        public async Task<Result<TagDTO>> UpdateTag(int id, TagRequestDTO tagRequestDTO)
+        public async Task<Result<List<TagDTO>>> GetAllTags()
         {
-            Tag? tagToUpdate = await _tagRepo.GetByIdAsync(id);
+            IEnumerable<Tag> tags = await _tagRepo.FindAllAsync(t => t.IsShow);
+            List<TagDTO> tagDTOs = _mapper.Map<List<TagDTO>>(tags);
 
-            if (tagToUpdate is null)
+            return Result<List<TagDTO>>.Success(tagDTOs, "Tags retrieved successfully");
+        }
+
+        public async Task<Result<List<TagDTO>>> FindAll(int pageNumber, int pageSize, Expression<Func<Tag, bool>> predicate, Func<IQueryable<Tag>, IOrderedQueryable<Tag>>? orderBy = null)
+        {
+            IQueryable<Tag> query = _tagRepo.GetBaseQuery(predicate: _ => true);
+            if(orderBy != null)
             {
-                return Result<TagDTO>.Failure($"Tag id {id} not found");
+                query = orderBy(query);
             }
 
-            _mapper.Map(tagRequestDTO, tagToUpdate);
+            IEnumerable<Tag> tags = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
-            Tag updatedTag = await _tagRepo.UpdateAsync(tagToUpdate);
-            TagDTO tagDTO = _mapper.Map<TagDTO>(updatedTag);
+            List<TagDTO> tagDTOs = _mapper.Map<List<TagDTO>>(tags);
 
-            return Result<TagDTO>.Success(tagDTO, "Tag updated successfully");
+            return Result<List<TagDTO>>.Success(tagDTOs, "Tags retrieved successfully");
         }
     }
 }

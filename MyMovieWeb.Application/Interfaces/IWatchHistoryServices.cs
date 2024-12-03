@@ -14,7 +14,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<int>> CountWatchHistories(string userId);
         Task<Result<int>> CountWatchingHistories(string userId);
         Task<Result<WatchHistoryDTO>> GetWatchHistory(int id, string userId);
-        Task<Result<List<WatchHistoryDTO>>> GetWatchingHistories(int pageNumber, int pageSize, string userId);
         Task<Result<List<WatchHistoryDTO>>> GetWatchHistories(int pageNumber, int pageSize, string userId);
+        Task<Result<List<WatchHistoryDTO>>> GetWatchingHistories(int pageNumber, int pageSize, string userId);
     }
 }

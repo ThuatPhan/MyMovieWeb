@@ -21,7 +21,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Policy = "create:tag")]
+        [Authorize(Policy = "create:data")]
         public async Task<ActionResult<ApiResponse<TagDTO>>> CreateTag([FromBody] TagRequestDTO tagRequestDTO)
         {
             try
@@ -44,7 +44,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPut("{id}")]
-        //[Authorize(Policy = "update:tag")]
+        [Authorize(Policy = "update:data")]
         public async Task<ActionResult<ApiResponse<TagDTO>>> UpdateTag([FromRoute] int id, [FromBody] TagRequestDTO tagRequestDTO)
         {
             try
@@ -67,7 +67,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
         
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "delete:tag")]
+        [Authorize(Policy = "delete:data")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteTag([FromRoute] int id)
         {
             try
@@ -134,7 +134,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<int> result = await _tagServices.CountTag();
+                Result<int> result = await _tagServices.CountTag(_ => true);
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -152,7 +152,12 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<List<TagDTO>> result = await _tagServices.GetAllTags(pageNumber, pageSize);
+                Result<List<TagDTO>> result = await _tagServices.FindAll(
+                    predicate: _ => true, 
+                    orderBy: t => t.OrderByDescending(t => t.Id), 
+                    pageNumber: pageNumber, 
+                    pageSize: pageSize
+                );
                 return Ok(ApiResponse<List<TagDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)

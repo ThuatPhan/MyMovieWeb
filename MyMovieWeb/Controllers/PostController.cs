@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MyMovieWeb.Application;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
@@ -22,7 +23,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPost]
         [DisableRequestSizeLimit]
-        // [Authorize(Policy = "create:post")]
+        [Authorize(Policy = "create:data")]
         public async Task<ActionResult<ApiResponse<PostDTO>>> CreatePost([FromForm] CreatePostRequestDTO postRequestDTO)
         {
             try
@@ -46,7 +47,7 @@ namespace MyMovieWeb.Presentation.Controllers
 
         [HttpPut("{id}")]
         [DisableRequestSizeLimit]
-        // [Authorize(Policy = "update:post")]
+         [Authorize(Policy = "update:data")]
         public async Task<ActionResult<ApiResponse<PostDTO>>> UpdatePost([FromRoute] int id, [FromForm] UpdatePostRequestDTO postRequestDTO)
         {
             try
@@ -69,7 +70,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Policy = "delete:post")]
+        [Authorize(Policy = "delete:data")]
         public async Task<ActionResult<ApiResponse<bool>>> DeletePost([FromRoute] int id)
         {
             try

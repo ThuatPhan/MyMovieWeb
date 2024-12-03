@@ -93,6 +93,7 @@ namespace MyMovieWeb.Presentation.Controllers
                     var session = stripeEvent.Data.Object as Session;
                     var order = new Order
                     {
+                        SessionId = session.Id,
                         MovieId = int.Parse(session.Metadata["movieId"]),
                         UserId = session.Metadata["userId"],
                         CreatedDate = session.Created
