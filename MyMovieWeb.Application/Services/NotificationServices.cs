@@ -4,6 +4,7 @@ using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Services
 {

@@ -126,8 +126,8 @@ namespace MyMovieWeb.Presentation.Controllers
             try
             {
                 Result<List<MovieDTO>> result = includeHiddenMovie == true
-                    ? await _movieServices.FindAllMovies(pageNumber, pageSize, _ => true, m => m.OrderBy(m => m.Title))
-                    : await _movieServices.FindAllMovies(pageNumber, pageSize, m => m.IsShow, m => m.OrderBy(m => m.Title));
+                    ? await _movieServices.FindAllMovies(pageNumber, pageSize, predicate: _ => true, orderBy: m => m.OrderByDescending(m => m.Id))
+                    : await _movieServices.FindAllMovies(pageNumber, pageSize, predicate: m => m.IsShow, orderBy: m => m.OrderBy(m => m.Title));
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }

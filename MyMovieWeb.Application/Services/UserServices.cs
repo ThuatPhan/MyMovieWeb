@@ -133,10 +133,10 @@ namespace MyMovieWeb.Application.Services
             return _notificationService.DeleteNotification(notificationId);
         }
 
-        public async Task<Result<bool>> IsUserBoughtMovie(string userId, int movieId)
+        public async Task<Result<bool>> IsPurchasedMovie(string userId, int movieId)
         {
             var result = await _orderRepo.FindOneAsync(o => o.UserId == userId && o.MovieId == movieId);
-            return Result<bool>.Success(result != null, "Bought status retrieved successfully");
+            return Result<bool>.Success(result != null, "Purchased status retrieved successfully");
         }
 
         public async Task<Result<List<MovieDTO>>> PurchasedMovies(string userId, int pageNumber, int pageSize)

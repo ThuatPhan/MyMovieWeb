@@ -90,7 +90,7 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<GenreDTO>>> GetAllGenres()
         {
-            IEnumerable<Genre> genres = await _genreRepo.GetAllAsync();
+            IEnumerable<Genre> genres = await _genreRepo.FindAllAsync(g => g.IsShow);
             List<GenreDTO> genreDTOs = _mapper.Map<List<GenreDTO>>(genres);
 
             return Result<List<GenreDTO>>.Success(genreDTOs, "Genres retrieved successfully");
@@ -101,6 +101,7 @@ namespace MyMovieWeb.Application.Services
             IQueryable<Genre> query = _genreRepo.GetBaseQuery(predicate: _ => true);
 
             IEnumerable<Genre> genres = await query
+                .OrderByDescending(g => g.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

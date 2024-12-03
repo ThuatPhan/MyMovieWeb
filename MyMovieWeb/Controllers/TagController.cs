@@ -134,7 +134,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<int> result = await _tagServices.CountTag();
+                Result<int> result = await _tagServices.CountTag(_ => true);
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
@@ -152,7 +152,12 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<List<TagDTO>> result = await _tagServices.GetAllTags(pageNumber, pageSize);
+                Result<List<TagDTO>> result = await _tagServices.FindAll(
+                    predicate: _ => true, 
+                    orderBy: t => t.OrderByDescending(t => t.Id), 
+                    pageNumber: pageNumber, 
+                    pageSize: pageSize
+                );
                 return Ok(ApiResponse<List<TagDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)

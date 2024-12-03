@@ -204,21 +204,21 @@ namespace MyMovieWeb.Presentation.Controllers
             }
         }
 
-        [HttpGet("is-bought-movie")]
+        [HttpGet("is-purchased")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<bool>>> CheckMovieBought([FromQuery] int movieId)
+        public async Task<ActionResult<ApiResponse<bool>>> CheckPurchasedMovie([FromQuery] int movieId)
         {
             try
             {
                 string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                var result = await _userServices.IsUserBoughtMovie(userId, movieId);
+                var result = await _userServices.IsPurchasedMovie(userId, movieId);
 
                 return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                return StatusCode(500, "An error occurred when rating movie");
+                return StatusCode(500, "An error occurred when checking purchased movie");
             }
         }
 

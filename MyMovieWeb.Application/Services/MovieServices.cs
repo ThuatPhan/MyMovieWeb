@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
-using MyMovieWeb.Application.Helper;
 using MyMovieWeb.Application.Interfaces;
 using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
-using System;
 using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Services
@@ -25,7 +22,7 @@ namespace MyMovieWeb.Application.Services
         private readonly IEpisodeServices _episodeServices;
         private readonly IMessageServices _messageServices;
         private readonly IS3Services _s3Services;
-      
+
 
         public MovieServices(
             IMapper mapper,
@@ -51,7 +48,7 @@ namespace MyMovieWeb.Application.Services
             _messageServices = messageServices;
             _s3Services = s3Services;
             _orderRepo = orderRepository;
-            
+
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
@@ -191,11 +188,11 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<MovieDTO>> GetMovieById(int id)
         {
-            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id)
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre);
 
             Movie? movie = await query
-                .Include(m => m.MovieGenres)
-                    .ThenInclude(mg => mg.Genre)
                 .Select(m => new Movie
                 {
                     Id = m.Id,
@@ -216,8 +213,7 @@ namespace MyMovieWeb.Application.Services
                     IsShow = m.IsShow,
                     ReleaseDate = m.ReleaseDate,
                     Episodes = m.Episodes,
-                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
-                .ToList()
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -227,29 +223,7 @@ namespace MyMovieWeb.Application.Services
             }
 
             MovieDTO movieDTO = _mapper.Map<MovieDTO>(movie);
-            int commentCount = await _commentRepo.CountAsync(c => c.MovieId == id);
-            movieDTO.CommentCount = commentCount;
-
-            return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
-        }
-
-        public async Task<Result<MovieDTO>> GetMovieToWatch(int id, bool isAuthenticated)
-        {
-            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == id);
-
-            Movie? movie = await query.FirstOrDefaultAsync();
-
-            if (movie is null)
-            {
-                return Result<MovieDTO>.Failure($"Movie id {id} not found");
-            }
-
-            MovieDTO movieDTO = _mapper.Map<MovieDTO>(movie);
-
-            if (isAuthenticated)
-            {
-                await _messageServices.SendMessage($"Has a user watching movie {movieDTO.Title}");
-            }
+            movieDTO.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == id);
 
             return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
         }
@@ -261,15 +235,17 @@ namespace MyMovieWeb.Application.Services
             Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null
         )
         {
-            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate);
+            IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate)
+                .Include(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre);
+
+
             if (orderBy != null)
             {
                 query = orderBy(query);
             }
 
             IEnumerable<Movie> movies = await query
-                .Include(m => m.MovieGenres)
-                    .ThenInclude(mg => mg.Genre)
                 .Select(m => new Movie
                 {
                     Id = m.Id,
@@ -290,24 +266,28 @@ namespace MyMovieWeb.Application.Services
                     IsShow = m.IsShow,
                     ReleaseDate = m.ReleaseDate,
                     Episodes = m.Episodes,
-                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
-                .ToList()
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow).ToList()
                 })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            foreach (var movie in movies)
-            {
-                movie.MovieGenres = movie.MovieGenres.Where(mg => mg.Genre.IsShow).ToList();
-            }
-
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
-            foreach (var movieDTO in movieDTOs)
+            var commentData = _commentRepo.GetBaseQuery(_ => true)
+                .GroupBy(c => c.MovieId)
+                .Select(group => new
+                {
+                    MovieId = group.Key,
+                    CommentCount = group.Count(),
+                })
+                .ToList();
+
+
+            foreach(var movieDTO in movieDTOs)
             {
-                int commentCount = await _commentRepo.CountAsync(c => c.MovieId == movieDTO.Id);
-                movieDTO.CommentCount = commentCount;
+                int? commentCount =  commentData.FirstOrDefault(c => c.MovieId == movieDTO.Id)?.CommentCount;
+                movieDTO.CommentCount = commentCount ?? 0;
             }
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
@@ -357,9 +337,10 @@ namespace MyMovieWeb.Application.Services
                     IsShow = m.IsShow,
                     ReleaseDate = m.ReleaseDate,
                     Episodes = m.Episodes,
-                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
-                .ToList()
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow).ToList()
+
                 })
+                .OrderBy(m => m.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -443,9 +424,9 @@ namespace MyMovieWeb.Application.Services
                 .Select(m => m.MovieId)
                 .ToList();
 
-            var topViewQuery = _movieRepo
-                .GetBaseQuery(predicate: m => movieIds.Contains(m.Id));
+            var topViewQuery = _movieRepo.GetBaseQuery(predicate: m => movieIds.Contains(m.Id));
             var topMovies = await topViewQuery.ToListAsync();
+
             topMovies = topMovies.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
 
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(topMovies);
@@ -520,8 +501,7 @@ namespace MyMovieWeb.Application.Services
                     IsShow = m.IsShow,
                     ReleaseDate = m.ReleaseDate,
                     Episodes = m.Episodes,
-                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow)
-                .ToList()
+                    MovieGenres = m.MovieGenres.Where(mg => mg.Genre.IsShow).ToList()
                 })
                 .ToListAsync();
 

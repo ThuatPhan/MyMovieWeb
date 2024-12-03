@@ -29,7 +29,11 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("RDSConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("RDSConnection"), 
+        sqlOptions => sqlOptions.EnableRetryOnFailure()
+    )
+);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>

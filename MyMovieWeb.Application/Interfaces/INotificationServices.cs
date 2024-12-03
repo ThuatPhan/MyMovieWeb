@@ -1,4 +1,6 @@
 ﻿using MyMovieWeb.Application.DTOs.Responses;
+using MyMovieWeb.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace MyMovieWeb.Application.Interfaces
 {

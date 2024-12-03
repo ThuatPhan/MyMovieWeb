@@ -13,7 +13,6 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<bool>> DeleteMovie(int id);
         Task<Result<int>> CountMovieBy(Expression<Func<Movie, bool>> predicate);
         Task<Result<MovieDTO>> GetMovieById(int id);
-        Task<Result<MovieDTO>> GetMovieToWatch(int id, bool isAuthenticated);
         Task<Result<List<MovieDTO>>> FindAllMovies(int pageNumber, int pageSize, Expression<Func<Movie, bool>> predicate, Func<IQueryable<Movie>, IOrderedQueryable<Movie>>? orderBy = null);
         Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize);
         Task<Result<bool>> IncreaseView(int id, int view);
@@ -23,6 +22,6 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount);
         Task<Result<List<MovieDTO>>> GetNewComment(int topCount);
         Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword);
-        Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId , int topMovie);
+        Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId, int topMovie);
     }
 }
