@@ -158,7 +158,7 @@ namespace MyMovieWeb.Application.Services
             }
 
             IQueryable<WatchHistory> query = _watchHistoryRepo
-                .GetBaseQuery(predicate: wh => wh.UserId == userId && wh.MovieId == movieId && wh.EpisodeId == episodeId);
+                .GetBaseQuery(predicate: wh => wh.UserId == userId && wh.MovieId == movieId && wh.EpisodeId == episodeId && !wh.IsWatched);
 
             WatchHistory? watchHistory = await query
                 .Include(wh => wh.Movie)
