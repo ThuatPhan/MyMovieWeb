@@ -592,7 +592,6 @@ namespace MyMovieWeb.Application.Services
                     return Result<List<MovieDTO>>.Failure("No movies were watched after the current movie.");
                 }
 
-                // Lấy thông tin chi tiết các bộ phim
                 var movieIds = watchedAfterMovies.Select(m => m.MovieId).ToList();
                 var moviesQuery = _movieRepo
                     .GetBaseQuery(m => movieIds.Contains(m.Id));

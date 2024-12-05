@@ -50,8 +50,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
 //Stripe config
 StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Value;
 
-builder.Services.AddHttpClient<FileUploadHelper>();
-builder.Services.AddSingleton<FileUploadHelper>();
+builder.Services.AddHttpClient<Auth0Services>();
 builder.Services.AddAutoMapper(typeof(ApplicationMapper));
 builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
@@ -82,6 +81,7 @@ builder.Services.AddScoped<INotificationServices, NotificationServices>();
 builder.Services.AddSingleton<IMessageServices, MessageServices>();
 builder.Services.AddSingleton<IS3Services, S3Services>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
+builder.Services.AddScoped<IStatisticServices, StatisticServices>();
 
 
 builder.Services.AddControllers();

@@ -63,7 +63,7 @@ namespace MyMovieWeb.Application.Services
                 .Select(fm => fm.UserId)
                 .ToList();
 
-            await _notificationServices.AddNotifications(userIds, $"Một người dùng đã bình luận phim {result.Data.Title} mà bạn quan tâm", $"/details/{result.Data.Id}");
+            await _notificationServices.AddNotifications(userIds, $"Một người dùng đã bình luận phim {result.Data.Title} mà bạn theo dõi", $"/details/{result.Data.Id}");
 
             return Result<CommentDTO>.Success(commentDTO, "Comment created successfully");
         }
