@@ -672,7 +672,6 @@ namespace MyMovieWeb.Application.Services
                 })
                 .OrderByDescending(m => m.TotalRevenue)
                 .ToList();
-
             return Result<List<MovieDTO>>.Success(groupedOrders, "Movie revenues retrieved successfully.");
         }
 
