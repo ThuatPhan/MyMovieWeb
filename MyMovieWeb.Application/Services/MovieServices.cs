@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -20,9 +21,7 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<FollowedMovie> _followedMovieRepo;
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
-        private readonly IMessageServices _messageServices;
         private readonly IS3Services _s3Services;
-
 
         public MovieServices(
             IMapper mapper,
@@ -32,10 +31,8 @@ namespace MyMovieWeb.Application.Services
             IRepository<FollowedMovie> followedMovieRepository,
             IRepository<WatchHistory> watchHistoryRepository,
             IEpisodeServices episodeServices,
-            IMessageServices messageServices,
             IS3Services s3Services,
             IRepository<Order> orderRepository
-
         )
         {
             _mapper = mapper;
@@ -45,10 +42,8 @@ namespace MyMovieWeb.Application.Services
             _followedMovieRepo = followedMovieRepository;
             _watchHistoryRepo = watchHistoryRepository;
             _episodeServices = episodeServices;
-            _messageServices = messageServices;
             _s3Services = s3Services;
             _orderRepo = orderRepository;
-
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
