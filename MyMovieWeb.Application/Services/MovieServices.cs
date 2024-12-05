@@ -561,7 +561,7 @@ namespace MyMovieWeb.Application.Services
 
                 if (!userLogDates.Any())
                 {
-                    return Result<List<MovieDTO>>.Failure("No users have watched this movie.");
+                    return Result<List<MovieDTO>>.Success(new List<MovieDTO>(), "No movies were found.");
                 }
 
                 var watchHistories = await _watchHistoryRepo
@@ -604,5 +604,27 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<MovieDTO>>.Failure($"An error occurred while retrieving movies: {ex.Message}");
             }
         }
+        public async Task<Result<List<MovieDTO>>> GetMovieRevenue(DateTime startDate, DateTime endDate)
+        {
+            var orders = await _orderRepo.GetBaseQuery(o =>
+                o.CreatedDate.Date >= startDate.Date && o.CreatedDate.Date <= endDate.Date)
+                .Include(o => o.Movie)
+                .ToListAsync();
+
+            var groupedOrders = orders
+                .GroupBy(o => o.MovieId)
+                .Select(group =>
+                {
+                    var movieDTO = _mapper.Map<MovieDTO>(group.First().Movie);
+                    movieDTO.CommentCount = group.Count();
+                    movieDTO.TotalRevenue = group.Sum(o => o.Movie.IsPaid ? (o.Movie.Price ?? 0) : 0);
+                    return movieDTO;
+                })
+                .OrderByDescending(m => m.TotalRevenue)
+                .ToList();
+
+            return Result<List<MovieDTO>>.Success(groupedOrders, "Movie revenues retrieved successfully.");
+        }
+
     }
 }
