@@ -78,7 +78,6 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ITagServices, TagService>();
 builder.Services.AddScoped<IPostServices, PostService>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();
-builder.Services.AddSingleton<IMessageServices, MessageServices>();
 builder.Services.AddSingleton<IS3Services, S3Services>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IStatisticServices, StatisticServices>();
@@ -134,7 +133,7 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapHub<MessageHub>("/messageHub");
+app.MapHub<VisitHub>("/visit");
 
 app.MapControllers();
 
