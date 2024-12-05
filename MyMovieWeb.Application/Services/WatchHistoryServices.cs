@@ -75,7 +75,7 @@ namespace MyMovieWeb.Application.Services
             }
 
 
-            var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId);
+            var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId && !wh.IsWatched);
 
             if (watched is null)
             {
