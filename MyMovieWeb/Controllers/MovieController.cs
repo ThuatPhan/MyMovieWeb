@@ -508,6 +508,30 @@ namespace MyMovieWeb.Presentation.Controllers
                 return StatusCode(500, ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving purchased movies."));
             }
         }
+        [HttpGet("revenue")]
+       // [Authorize]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetMovieRevenue(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            try
+            {
+                var result = await _movieServices.GetMovieRevenue(startDate, endDate);
+
+                if (result.IsSuccess)
+                {
+                    return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+                }
+
+                return BadRequest(ApiResponse<List<MovieDTO>>.FailureResponse(result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving movie revenue");
+                return StatusCode(500, "An error occurred while retrieving movie revenue.");
+            }
+        }
+
 
     }
 }

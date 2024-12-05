@@ -25,6 +25,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword);
         Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId , int topMovie);
         Task<Result<List<MovieDTO>>> GetPurchasedMoviesByUser(string userId, int pageNumber, int pageSize);
+        Task<Result<List<MovieDTO>>> GetMovieRevenue(DateTime startDate, DateTime endDate);
 
     }
 }

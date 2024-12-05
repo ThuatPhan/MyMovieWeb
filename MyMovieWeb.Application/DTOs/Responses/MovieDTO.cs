@@ -22,5 +22,6 @@
         public int CommentCount { get; set; }
         public bool IsShow { get; set; }
         public DateTime ReleaseDate { get; set; }
+        public decimal TotalRevenue { get; set; }
     }
 }
