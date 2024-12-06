@@ -6,6 +6,7 @@ using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Presentation.Response;
 using Stripe;
 using Stripe.Checkout;
+using System;
 using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -94,9 +95,13 @@ namespace MyMovieWeb.Presentation.Controllers
                     var order = new Order
                     {
                         SessionId = session.Id,
+                        TotalAmount = (decimal)session.AmountTotal,
                         MovieId = int.Parse(session.Metadata["movieId"]),
                         UserId = session.Metadata["userId"],
-                        CreatedDate = session.Created
+                        CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(
+                            session.Created, 
+                            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                        ),
                     };
 
                     await _orderServices.CreateOrder(order);
