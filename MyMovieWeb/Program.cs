@@ -21,7 +21,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5000") 
+            policy.WithOrigins("http://localhost:5000", "https://my-movie-web-client-eight.vercel.app") 
                   .AllowAnyMethod() 
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -97,6 +97,12 @@ builder.Services
            policy => policy.Requirements.Add(
              new HasScopeRequirement("create:data", $"https://{builder.Configuration["Auth0:Domain"]}/")
            )
+         );
+         options.AddPolicy(
+         "read:data",
+            policy => policy.Requirements.Add(
+                new HasScopeRequirement("read:data", $"https://{builder.Configuration["Auth0:Domain"]}/")
+            )
          );
          options.AddPolicy(
            "update:data",
