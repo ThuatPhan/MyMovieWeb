@@ -21,7 +21,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins",
         policy =>
         {
-            policy.WithOrigins("https://my-movie-web-client-eight.vercel.app/") 
+            policy.WithOrigins("http://localhost:5000", "https://my-movie-web-client-eight.vercel.app") 
                   .AllowAnyMethod() 
                   .AllowAnyHeader()
                   .AllowCredentials();

@@ -192,7 +192,6 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Thread.Sleep(1000);
                 Result<List<CommentDTO>> result = await _commentService.GetCommentsOfEpisode(movieId, episodeId, pageNumber, pageSize);
                 if (!result.IsSuccess)
                 {
