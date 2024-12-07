@@ -203,7 +203,7 @@ namespace MyMovieWeb.Application.Services
 
             IEnumerable<Comment> comments = await query
                 .OrderByDescending(c => c.CreatedDate)
-                .Skip((pageSize - 1) * pageSize)
+                .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
@@ -222,7 +222,5 @@ namespace MyMovieWeb.Application.Services
 
             return Result<List<CommentDTO>>.Success(commentDTOs, "Comments retrieved successfully");
         }
-
     }
-
 }
