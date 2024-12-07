@@ -10,16 +10,14 @@ namespace MyMovieWeb.Application.Services
     {
         private readonly IConfiguration _configuration;
         private readonly AmazonS3Client _s3Client;
-        private readonly string _accessKey, _secretKey, _bucketName;
+        private readonly string _bucketName;
 
         public S3Services(IConfiguration configuration)
         {
             _configuration = configuration;
-            _accessKey = _configuration["AwsS3:AccessKey"]!;
-            _secretKey = _configuration["AwsS3:SecretKey"]!;
             _bucketName = _configuration["AwsS3:BucketName"]!;
 
-            _s3Client = new AmazonS3Client(_accessKey, _secretKey, Amazon.RegionEndpoint.APSoutheast1);
+            _s3Client = new AmazonS3Client(Amazon.RegionEndpoint.APSoutheast1);
         }
 
         public async Task<string> UploadFileAsync(IFormFile file)
