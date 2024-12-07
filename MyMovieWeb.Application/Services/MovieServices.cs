@@ -151,8 +151,9 @@ namespace MyMovieWeb.Application.Services
             var deleteDataTasks = Task.WhenAll(
                 _commentRepo.RemoveRangeAsync(wh => wh.MovieId == id),
                 _watchHistoryRepo.RemoveRangeAsync(wh => wh.MovieId == id),
-                _followedMovieRepo.RemoveRangeAsync(wh => wh.MovieId == id)
-            );
+                _followedMovieRepo.RemoveRangeAsync(wh => wh.MovieId == id),
+                _orderRepo.RemoveRangeAsync(o => o.MovieId == id)
+            ); 
 
             await _episodeServices.DeleteEpisodeOfMovie(id);
 
