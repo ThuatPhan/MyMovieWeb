@@ -10,6 +10,7 @@
         public string PosterUrl { get; set; }
         public string BannerUrl { get; set; }
         public List<MovieGenreDTO> Genres { get; set; }
+        public bool IsPaid { get; set; }
         public bool IsSeries { get; set; }
         public bool? IsSeriesCompleted { get; set; }
         public string? VideoUrl { get; set; }
