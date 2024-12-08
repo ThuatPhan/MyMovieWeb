@@ -18,6 +18,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpPost("upload")]
+        [DisableRequestSizeLimit]
         public async Task<ActionResult<string>> UploadFile([FromForm] FileUploadRequestDTO fileUploadRequest)
         {
             try
