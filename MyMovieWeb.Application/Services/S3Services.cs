@@ -11,31 +11,31 @@ namespace MyMovieWeb.Application.Services
         private readonly IConfiguration _configuration;
         private readonly AmazonS3Client _s3Client;
         private readonly string _bucketName;
+        private readonly string _distributionDomainName;
 
         public S3Services(IConfiguration configuration)
         {
             _configuration = configuration;
             _bucketName = _configuration["AwsS3:BucketName"]!;
-
+            _distributionDomainName = _configuration["AwsCloudFront:DomainName"]!;
             _s3Client = new AmazonS3Client(Amazon.RegionEndpoint.APSoutheast1);
         }
 
         public async Task<string> UploadFileAsync(IFormFile file)
         {
-            var fileKey = Guid.NewGuid().ToString();
             var uploadRequest = new PutObjectRequest
             {
                 BucketName = _bucketName,
                 InputStream = file.OpenReadStream(),
-                Key = fileKey,
+                Key = file.FileName,
                 ContentType = file.ContentType,
             };
-
+            
             var uploadResponse = await _s3Client.PutObjectAsync(uploadRequest);
 
             if (uploadResponse.HttpStatusCode == System.Net.HttpStatusCode.OK)
             {
-                return $"https://my-movie-file-bucket.s3.ap-southeast-1.amazonaws.com/{fileKey}";
+                return $"{_distributionDomainName}/{file.FileName}";
             }
 
             throw new Exception($"Failed to upload file to bucket {_bucketName}");
@@ -51,10 +51,6 @@ namespace MyMovieWeb.Application.Services
             };
 
             var deleteResponse = await _s3Client.DeleteObjectAsync(deleteRequest);
-            if (deleteResponse.HttpStatusCode != System.Net.HttpStatusCode.NoContent)
-            {
-                throw new Exception($"Failed to delete file from bucket {_bucketName}");
-            }
         }
     }
 }
