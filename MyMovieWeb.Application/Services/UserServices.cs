@@ -92,6 +92,8 @@ namespace MyMovieWeb.Application.Services
 
             IEnumerable<FollowedMovie> followedMovies = await query
                 .Include(fm => fm.Movie)
+                    .ThenInclude(m => m.MovieGenres)
+                        .ThenInclude(mg => mg.Genre)
                 .OrderBy(fm => fm.Movie.Title)
                 .Where(fm => fm.Movie.IsShow)
                 .Skip((pageNumber - 1) * pageSize)
