@@ -6,7 +6,6 @@ using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Presentation.Response;
 using Stripe;
 using Stripe.Checkout;
-using System;
 using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -59,7 +58,7 @@ namespace MyMovieWeb.Presentation.Controllers
                         },
                     },
                     Mode = "payment",
-                    SuccessUrl = paymentRequest.MobilePlaftform == false 
+                    SuccessUrl = paymentRequest.MobilePlatform == false
                     ? $"{_configuration["Stripe:SuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}"
                     : $"{_configuration["Stripe:MobileSuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}",
                     CancelUrl = _configuration["Stripe:CancelUrl"],
@@ -101,7 +100,7 @@ namespace MyMovieWeb.Presentation.Controllers
                         MovieId = int.Parse(session.Metadata["movieId"]),
                         UserId = session.Metadata["userId"],
                         CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(
-                            session.Created, 
+                            session.Created,
                             TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
                         ),
                     };
