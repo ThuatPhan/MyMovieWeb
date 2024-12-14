@@ -59,7 +59,9 @@ namespace MyMovieWeb.Presentation.Controllers
                         },
                     },
                     Mode = "payment",
-                    SuccessUrl = $"{_configuration["Stripe:SuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}",
+                    SuccessUrl = paymentRequest.MobilePlaftform == false 
+                    ? $"{_configuration["Stripe:SuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}"
+                    : $"{_configuration["Stripe:MobileSuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}",
                     CancelUrl = _configuration["Stripe:CancelUrl"],
                     Metadata = new Dictionary<string, string>
                     {
