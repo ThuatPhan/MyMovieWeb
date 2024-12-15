@@ -19,4 +19,8 @@
 		<ProjectReference Include="..\MyMovieWeb.Application\MyMovieWeb.Application.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="wwwroot\" />
+	</ItemGroup>
+
 </Project>

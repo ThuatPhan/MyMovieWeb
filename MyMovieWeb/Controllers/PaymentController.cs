@@ -58,13 +58,13 @@ namespace MyMovieWeb.Presentation.Controllers
                         },
                     },
                     Mode = "payment",
-                    SuccessUrl = paymentRequest.MobilePlatform == false
-                    ? $"{_configuration["Stripe:SuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}"
-                    : $"{_configuration["Stripe:MobileSuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}",
+                    SuccessUrl = $"{_configuration["Stripe:SuccessUrl"]}?session_id={{CHECKOUT_SESSION_ID}}",
                     CancelUrl = _configuration["Stripe:CancelUrl"],
                     Metadata = new Dictionary<string, string>
                     {
                         { "movieId", $"{paymentRequest.Metadata["movieId"]}" },
+                        { "movieTitle", $"{paymentRequest.Metadata["movieTitle"]}" },
+                        { "moviePoster", $"{paymentRequest.Metadata["moviePoster"]}" },
                         { "userId", $"{User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value}" }
                     }
                 };
@@ -119,5 +119,37 @@ namespace MyMovieWeb.Presentation.Controllers
                 return BadRequest();
             }
         }
+
+        [HttpGet("session-details/{sessionId}")]
+        //[Authorize]
+        public ActionResult<ApiResponse<object>> GetSessionDetails(string sessionId)
+        {
+            try
+            {
+                var service = new SessionService();
+                var session = service.Get(sessionId);
+
+                var sessionDetails = new
+                {
+                    SessionId = session.Id,
+                    session.PaymentStatus,
+                    session.AmountTotal,
+                    session.Currency,
+                    MovieId = session.Metadata["movieId"],
+                    UserId = session.Metadata["userId"],
+                    Title = session.Metadata["movieTitle"],
+                    Poster = session.Metadata["moviePoster"],
+                    session.Created
+                };
+
+                return Ok(ApiResponse<object>.SuccessResponse(sessionDetails, "Session details retrieved successfully"));
+            }
+            catch (StripeException ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ApiResponse<string>.FailureResponse("Failed to retrieve session details."));
+            }
+        }
+
     }
 }
