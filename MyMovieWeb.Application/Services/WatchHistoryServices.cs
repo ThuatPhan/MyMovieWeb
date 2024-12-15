@@ -45,10 +45,7 @@ namespace MyMovieWeb.Application.Services
 
             var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId);
 
-            if (watched is null)
-            {
-                await _movieServices.IncreaseView(result.Data.Id, 1);
-            }
+            await _movieServices.IncreaseView(result.Data.Id, 1);
 
             await _watchHistoryRepo.AddAsync(watchHistory);
 
@@ -77,10 +74,7 @@ namespace MyMovieWeb.Application.Services
 
             var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId && !wh.IsWatched);
 
-            if (watched is null)
-            {
-                await _movieServices.IncreaseView(movieResult.Data.Id, 1);
-            }
+            await _movieServices.IncreaseView(movieResult.Data.Id, 1);
 
             await _watchHistoryRepo.AddAsync(watchHistory);
 
