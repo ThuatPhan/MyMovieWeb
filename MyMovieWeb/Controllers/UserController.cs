@@ -240,12 +240,12 @@ namespace MyMovieWeb.Presentation.Controllers
         }
         [HttpGet("purchased-movies/count")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<List<FollowedMovieDTO>>>> CountMoviesBuybyUser()
+        public async Task<ActionResult<ApiResponse<int>>> CountPurchasedMovie()
         {
             try
             {
                 string userId = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-                Result<int> result = await _orderServices.CountMovieBoughtbyUser(userId);
+                Result<int> result = await _orderServices.CountPurchasedMovie(userId);
                 return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)
