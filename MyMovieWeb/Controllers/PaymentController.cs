@@ -31,9 +31,39 @@ namespace MyMovieWeb.Presentation.Controllers
             _orderServices = orderServices;
         }
 
+        [HttpPost("create-intent")]
+        [Authorize]
+        public IActionResult CreatePaymentIntent([FromBody] PaymentRequestDTO request)
+        {
+            try
+            {
+                var options = new PaymentIntentCreateOptions
+                {
+                    Amount = request.Amount,
+                    Currency = "vnd",
+                    PaymentMethodTypes = new List<string> { "card" },
+                    Metadata = new Dictionary<string, string>
+                    {
+                        { "movieId", request.Metadata["movieId"] },
+                        { "userId", $"{User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value}" }
+                    }
+                };
+
+                var service = new PaymentIntentService();
+                var paymentIntent = service.Create(options);
+
+                return Ok(new { paymentIntent.ClientSecret });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         [HttpPost("create-checkout-session")]
         [Authorize]
-        public ActionResult<ApiResponse<string>> CreateCheckoutSession([FromBody] CreatePaymentRequest paymentRequest)
+        public ActionResult<ApiResponse<string>> CreateCheckoutSession([FromBody] PaymentRequestDTO paymentRequest)
         {
             try
             {
@@ -46,7 +76,7 @@ namespace MyMovieWeb.Presentation.Controllers
                         {
                             PriceData = new SessionLineItemPriceDataOptions
                             {
-                                UnitAmount = (long?)paymentRequest.Amount,
+                                UnitAmount = paymentRequest.Amount,
                                 Currency = "vnd",
                                 ProductData = new SessionLineItemPriceDataProductDataOptions
                                 {
@@ -96,7 +126,7 @@ namespace MyMovieWeb.Presentation.Controllers
                     var order = new Order
                     {
                         SessionId = session.Id,
-                        TotalAmount = (decimal)session.AmountTotal,
+                        TotalAmount = session.AmountTotal,
                         MovieId = int.Parse(session.Metadata["movieId"]),
                         UserId = session.Metadata["userId"],
                         CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(
@@ -105,6 +135,22 @@ namespace MyMovieWeb.Presentation.Controllers
                         ),
                     };
 
+                    await _orderServices.CreateOrder(order);
+                } 
+                else if (stripeEvent.Type == EventTypes.PaymentIntentSucceeded)
+                {
+                    var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
+                    var order = new Order
+                    {
+                        PaymentIntentId = paymentIntent.Id,
+                        TotalAmount = paymentIntent.Amount,
+                        MovieId = int.Parse(paymentIntent.Metadata["movieId"]),
+                        UserId = paymentIntent.Metadata["userId"],
+                        CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(
+                            paymentIntent.Created,
+                            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                        )
+                    };
                     await _orderServices.CreateOrder(order);
                 }
                 else
@@ -121,7 +167,7 @@ namespace MyMovieWeb.Presentation.Controllers
         }
 
         [HttpGet("session-details/{sessionId}")]
-        //[Authorize]
+        [Authorize]
         public ActionResult<ApiResponse<object>> GetSessionDetails(string sessionId)
         {
             try
@@ -150,6 +196,5 @@ namespace MyMovieWeb.Presentation.Controllers
                 return BadRequest(ApiResponse<string>.FailureResponse("Failed to retrieve session details."));
             }
         }
-
     }
 }

@@ -3,6 +3,6 @@
     public class MovieRevenueChartDTO
     {
         public MovieDTO Movie { get; set; }
-        public decimal TotalRevenue { get; set; }
+        public long? TotalRevenue { get; set; }
     }
 }
