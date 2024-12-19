@@ -19,13 +19,13 @@ namespace MyMovieWeb.Application.Services
             await _orderRepo.AddAsync(order);
         }
 
-        public async Task<Result<bool>> IsUserBoughtMovie(string userId, int movieId)
+        public async Task<Result<bool>> IsPurchasedMovie(string userId, int movieId)
         {
             var result = await _orderRepo.FindOneAsync(o => o.UserId == userId && o.MovieId == movieId);
             return Result<bool>.Success(result != null, "Bought status retrieved successfully");
         }
 
-        public async Task<Result<int>> CountMovieBoughtbyUser(string userId)
+        public async Task<Result<int>> CountPurchasedMovie(string userId)
         {
             int totalMovie = await _orderRepo.GetBaseQuery(
             o => o.UserId == userId && o.Movie.IsShow).CountAsync();
