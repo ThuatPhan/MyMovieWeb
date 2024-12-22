@@ -157,7 +157,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<MovieDTO>>.Failure("No movies found for this user.");
             }
 
-            var movies = orders.Select(o => o.Movie).ToList();
+            var movies = orders.Where(o => o.Movie.IsShow).Select(o => o.Movie).ToList();
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Purchased movies retrieved successfully.");

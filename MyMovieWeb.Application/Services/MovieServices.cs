@@ -419,7 +419,7 @@ namespace MyMovieWeb.Application.Services
                 .Select(m => m.MovieId)
                 .ToList();
 
-            var topViewQuery = _movieRepo.GetBaseQuery(predicate: m => movieIds.Contains(m.Id));
+            var topViewQuery = _movieRepo.GetBaseQuery(predicate: m => movieIds.Contains(m.Id) && m.IsShow);
             var topMovies = await topViewQuery.ToListAsync();
 
             topMovies = topMovies.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
@@ -514,7 +514,7 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword)
         {
-            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(m => m.Title.ToLower().Trim().Contains(keyword.ToLower().Trim()));
+            IEnumerable<Movie> movies = await _movieRepo.FindAllAsync(m => m.IsShow && m.Title.ToLower().Trim().Contains(keyword.ToLower().Trim()));
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
@@ -538,7 +538,7 @@ namespace MyMovieWeb.Application.Services
             var movieIds = latestComments.Select(c => c.MovieId).ToList();
 
             var moviesQuery = _movieRepo
-                .GetBaseQuery(m => movieIds.Contains(m.Id));
+                .GetBaseQuery(m => movieIds.Contains(m.Id) && m.IsShow);
             var movies = await moviesQuery.ToListAsync();
 
             var sortedMovies = movies
