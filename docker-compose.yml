@@ -1,0 +1,9 @@
+services:
+  mymovieweb.presentation:
+    image: ${DOCKER_REGISTRY-}mymoviewebpresentation
+    build:
+      context: .
+      dockerfile: MyMovieWeb/Dockerfile
+    ports:
+      - "8000:8080"  
+      - "8001:8081" 
