@@ -473,7 +473,7 @@ namespace MyMovieWeb.Application.Services
             List<int> movieIds = trendingMoviesData.Select(m => m.MovieId).ToList();
 
             IEnumerable<Movie> trendingMovies = await _movieRepo
-                .GetBaseQuery(m => movieIds.Contains(m.Id))
+                .GetBaseQuery(m => movieIds.Contains(m.Id) && m.IsShow)
                 .Include(m => m.MovieGenres)
                     .ThenInclude(mg => mg.Genre)
                 .Select(m => new Movie
