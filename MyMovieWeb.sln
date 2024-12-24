@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyMovieWeb.Presentation", "MyMovieWeb\MyMovieWeb.Presentation.csproj", "{8B07513B-2805-4DB1-82EB-41CA926EE2A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyMovieWeb.Presentation", "MyMovieWeb\MyMovieWeb.Presentation.csproj", "{8B07513B-2805-4DB1-82EB-41CA926EE2A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyMovieWeb.Domain", "MyMovieWeb.Domain\MyMovieWeb.Domain.csproj", "{AA8CC758-A65A-4481-8432-F86207574134}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyMovieWeb.Domain", "MyMovieWeb.Domain\MyMovieWeb.Domain.csproj", "{AA8CC758-A65A-4481-8432-F86207574134}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyMovieWeb.Infrastructure", "MyMovieWeb.Infrastructure\MyMovieWeb.Infrastructure.csproj", "{BD93E6EF-1ED9-4952-9471-B176D1FDC651}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyMovieWeb.Infrastructure", "MyMovieWeb.Infrastructure\MyMovieWeb.Infrastructure.csproj", "{BD93E6EF-1ED9-4952-9471-B176D1FDC651}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyMovieWeb.Application", "MyMovieWeb.Application\MyMovieWeb.Application.csproj", "{48B8CA14-6D49-407B-B0D1-0774EC6B8CC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyMovieWeb.Application", "MyMovieWeb.Application\MyMovieWeb.Application.csproj", "{48B8CA14-6D49-407B-B0D1-0774EC6B8CC7}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{B920C1E4-B5CF-4FE7-B91D-97CFCAB95836}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{48B8CA14-6D49-407B-B0D1-0774EC6B8CC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48B8CA14-6D49-407B-B0D1-0774EC6B8CC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48B8CA14-6D49-407B-B0D1-0774EC6B8CC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B920C1E4-B5CF-4FE7-B91D-97CFCAB95836}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B920C1E4-B5CF-4FE7-B91D-97CFCAB95836}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B920C1E4-B5CF-4FE7-B91D-97CFCAB95836}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B920C1E4-B5CF-4FE7-B91D-97CFCAB95836}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

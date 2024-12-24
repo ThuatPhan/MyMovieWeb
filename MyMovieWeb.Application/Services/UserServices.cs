@@ -92,6 +92,8 @@ namespace MyMovieWeb.Application.Services
 
             IEnumerable<FollowedMovie> followedMovies = await query
                 .Include(fm => fm.Movie)
+                    .ThenInclude(m => m.MovieGenres)
+                        .ThenInclude(mg => mg.Genre)
                 .OrderBy(fm => fm.Movie.Title)
                 .Where(fm => fm.Movie.IsShow)
                 .Skip((pageNumber - 1) * pageSize)
@@ -150,12 +152,7 @@ namespace MyMovieWeb.Application.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            if (!orders.Any())
-            {
-                return Result<List<MovieDTO>>.Failure("No movies found for this user.");
-            }
-
-            var movies = orders.Select(o => o.Movie).ToList();
+            var movies = orders.Where(o => o.Movie.IsShow).Select(o => o.Movie).ToList();
             List<MovieDTO> movieDTOs = _mapper.Map<List<MovieDTO>>(movies);
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Purchased movies retrieved successfully.");

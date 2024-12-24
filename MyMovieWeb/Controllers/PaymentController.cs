@@ -6,7 +6,6 @@ using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Presentation.Response;
 using Stripe;
 using Stripe.Checkout;
-using System;
 using System.Security.Claims;
 
 namespace MyMovieWeb.Presentation.Controllers
@@ -32,9 +31,39 @@ namespace MyMovieWeb.Presentation.Controllers
             _orderServices = orderServices;
         }
 
+        [HttpPost("create-intent")]
+        [Authorize]
+        public IActionResult CreatePaymentIntent([FromBody] PaymentRequestDTO request)
+        {
+            try
+            {
+                var options = new PaymentIntentCreateOptions
+                {
+                    Amount = request.Amount,
+                    Currency = "vnd",
+                    PaymentMethodTypes = new List<string> { "card" },
+                    Metadata = new Dictionary<string, string>
+                    {
+                        { "movieId", request.Metadata["movieId"] },
+                        { "userId", $"{User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value}" }
+                    }
+                };
+
+                var service = new PaymentIntentService();
+                var paymentIntent = service.Create(options);
+
+                return Ok(new { paymentIntent.ClientSecret });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         [HttpPost("create-checkout-session")]
         [Authorize]
-        public ActionResult<ApiResponse<string>> CreateCheckoutSession([FromBody] CreatePaymentRequest paymentRequest)
+        public ActionResult<ApiResponse<string>> CreateCheckoutSession([FromBody] PaymentRequestDTO paymentRequest)
         {
             try
             {
@@ -47,7 +76,7 @@ namespace MyMovieWeb.Presentation.Controllers
                         {
                             PriceData = new SessionLineItemPriceDataOptions
                             {
-                                UnitAmount = (long?)paymentRequest.Amount,
+                                UnitAmount = paymentRequest.Amount,
                                 Currency = "vnd",
                                 ProductData = new SessionLineItemPriceDataProductDataOptions
                                 {
@@ -64,6 +93,8 @@ namespace MyMovieWeb.Presentation.Controllers
                     Metadata = new Dictionary<string, string>
                     {
                         { "movieId", $"{paymentRequest.Metadata["movieId"]}" },
+                        { "movieTitle", $"{paymentRequest.Metadata["movieTitle"]}" },
+                        { "moviePoster", $"{paymentRequest.Metadata["moviePoster"]}" },
                         { "userId", $"{User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value}" }
                     }
                 };
@@ -95,15 +126,31 @@ namespace MyMovieWeb.Presentation.Controllers
                     var order = new Order
                     {
                         SessionId = session.Id,
-                        TotalAmount = (decimal)session.AmountTotal,
+                        TotalAmount = session.AmountTotal,
                         MovieId = int.Parse(session.Metadata["movieId"]),
                         UserId = session.Metadata["userId"],
                         CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(
-                            session.Created, 
+                            session.Created,
                             TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
                         ),
                     };
 
+                    await _orderServices.CreateOrder(order);
+                } 
+                else if (stripeEvent.Type == EventTypes.PaymentIntentSucceeded)
+                {
+                    var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
+                    var order = new Order
+                    {
+                        PaymentIntentId = paymentIntent.Id,
+                        TotalAmount = paymentIntent.Amount,
+                        MovieId = int.Parse(paymentIntent.Metadata["movieId"]),
+                        UserId = paymentIntent.Metadata["userId"],
+                        CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(
+                            paymentIntent.Created,
+                            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                        )
+                    };
                     await _orderServices.CreateOrder(order);
                 }
                 else
@@ -116,6 +163,37 @@ namespace MyMovieWeb.Presentation.Controllers
             {
                 _logger.LogError(ex.Message);
                 return BadRequest();
+            }
+        }
+
+        [HttpGet("session-details/{sessionId}")]
+        [Authorize]
+        public ActionResult<ApiResponse<object>> GetSessionDetails(string sessionId)
+        {
+            try
+            {
+                var service = new SessionService();
+                var session = service.Get(sessionId);
+
+                var sessionDetails = new
+                {
+                    SessionId = session.Id,
+                    session.PaymentStatus,
+                    session.AmountTotal,
+                    session.Currency,
+                    MovieId = session.Metadata["movieId"],
+                    UserId = session.Metadata["userId"],
+                    Title = session.Metadata["movieTitle"],
+                    Poster = session.Metadata["moviePoster"],
+                    session.Created
+                };
+
+                return Ok(ApiResponse<object>.SuccessResponse(sessionDetails, "Session details retrieved successfully"));
+            }
+            catch (StripeException ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ApiResponse<string>.FailureResponse("Failed to retrieve session details."));
             }
         }
     }
