@@ -58,7 +58,9 @@ namespace MyMovieWeb.Application.Services
             }
             commentDTO.User = userResult.Data;
 
-            List<string> userIds = (await _followedMovieRepo.FindAllAsync(fm => fm.MovieId == commentDTO.MovieId))
+            var followedMovies = await _followedMovieRepo.FindAllAsync(fm => fm.MovieId == commentDTO.MovieId);
+
+            List<string> userIds = followedMovies
                 .Where(fm => fm.UserId != userId)
                 .Select(fm => fm.UserId)
                 .ToList();
