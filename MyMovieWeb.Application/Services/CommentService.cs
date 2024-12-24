@@ -51,6 +51,11 @@ namespace MyMovieWeb.Application.Services
             Comment createdComment = await _commentRepo.AddAsync(newComment);
             CommentDTO commentDTO = _mapper.Map<CommentDTO>(createdComment);
 
+            var userIds = await _followedMovieRepo
+                .GetBaseQuery(fm => fm.MovieId == commentDTO.MovieId && fm.UserId != userId)
+                .Select(fm => fm.UserId)
+                .ToListAsync();
+
             Result<Auth0UserDTO> userResult = await _auth0Services.GetUser(userId);
             if (!userResult.IsSuccess)
             {
@@ -58,14 +63,7 @@ namespace MyMovieWeb.Application.Services
             }
             commentDTO.User = userResult.Data;
 
-            var followedMovies = await _followedMovieRepo.FindAllAsync(fm => fm.MovieId == commentDTO.MovieId);
-
-            List<string> userIds = followedMovies
-                .Where(fm => fm.UserId != userId)
-                .Select(fm => fm.UserId)
-                .ToList();
-
-            await _notificationServices.AddNotifications(userIds, $"Một người dùng đã bình luận phim {result.Data.Title} mà bạn theo dõi", $"/details/{result.Data.Id}");
+            //await _notificationServices.AddNotifications(userIds, $"Một người dùng đã bình luận phim {result.Data.Title} mà bạn theo dõi", $"/details/{result.Data.Id}");
 
             return Result<CommentDTO>.Success(commentDTO, "Comment created successfully");
         }
