@@ -257,7 +257,7 @@ namespace MyMovieWeb.Presentation.Controllers
                             pageNumber,
                             pageSize,
                             m => m.IsShow,
-                            m => m.OrderBy(m => m.ReleaseDate)
+                            m => m.OrderByDescending(m => m.ReleaseDate)
                         );
 
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
