@@ -43,9 +43,15 @@ namespace MyMovieWeb.Application.Services
                 return Result<WatchHistoryDTO>.Failure(result.Message);
             }
 
-            var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId);
+            var watched = await _watchHistoryRepo.
+                GetBaseQuery(wh => wh.UserId == userId && wh.MovieId == watchMovieRequest.MovieId && !wh.IsWatched)
+                .OrderByDescending(wh => wh.LogDate)
+                .FirstOrDefaultAsync();
 
-            await _movieServices.IncreaseView(result.Data.Id, 1);
+            if (watched is null)
+            {
+                await _movieServices.IncreaseView(result.Data.Id, 1);
+            }
 
             await _watchHistoryRepo.AddAsync(watchHistory);
 
@@ -72,9 +78,20 @@ namespace MyMovieWeb.Application.Services
             }
 
 
-            var watched = await _watchHistoryRepo.FindOneAsync(wh => wh.UserId == userId && !wh.IsWatched);
+            var watched = await _watchHistoryRepo.
+                GetBaseQuery(
+                    wh => wh.UserId == userId
+                    && wh.MovieId == watchEpisodeRequest.MovieId
+                    && wh.EpisodeId == watchEpisodeRequest.EpisodeId
+                    && !wh.IsWatched
+                )
+                .OrderByDescending(wh => wh.LogDate)
+                .FirstOrDefaultAsync();
 
-            await _movieServices.IncreaseView(movieResult.Data.Id, 1);
+            if (watched is null)
+            {
+                await _movieServices.IncreaseView(movieResult.Data.Id, 1);
+            }
 
             await _watchHistoryRepo.AddAsync(watchHistory);
 
