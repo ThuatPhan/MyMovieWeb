@@ -23,5 +23,7 @@ namespace MyMovieWeb.Application.Interfaces
         Task<Result<List<MovieDTO>>> GetNewComment(int topCount);
         Task<Result<List<MovieDTO>>> SearchMovieByName(string keyword);
         Task<Result<List<MovieDTO>>> GetRecommendedMovies(int movieId, int topMovie);
+        Task<Result<List<MovieDTO>>> GetMoviesByOption(bool paidMovie, int pageNumber, int pageSize);
+        Task<Result<int>> CountMovieByOption(bool paidMovie);
     }
 }

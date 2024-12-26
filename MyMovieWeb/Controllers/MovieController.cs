@@ -479,5 +479,81 @@ namespace MyMovieWeb.Presentation.Controllers
                 );
             }
         }
+
+        [HttpGet("count-paid")]
+        public async Task<ActionResult<ApiResponse<int>>> CountPaidMovie()
+        {
+            try
+            {
+                Result<int> result = await _movieServices.CountMovieByOption(paidMovie: true);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when counting paid movies");
+            }
+        }
+
+        [HttpGet("count-free")]
+        public async Task<ActionResult<ApiResponse<int>>> CountFreeMovie()
+        {
+            try
+            {
+                Result<int> result = await _movieServices.CountMovieByOption(paidMovie: false);
+                return Ok(ApiResponse<int>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred when counting paid movies");
+            }
+        }
+
+        [HttpGet("paid")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetPaidMovies(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices
+                    .GetMoviesByOption(paidMovie: true, pageNumber, pageSize);
+
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving paid movies")
+                );
+            }
+        }
+
+        [HttpGet("free")]
+        public async Task<ActionResult<ApiResponse<List<MovieDTO>>>> GetFreeMovies(
+            [FromQuery] int pageNumber,
+            [FromQuery] int pageSize
+        )
+        {
+            try
+            {
+                Result<List<MovieDTO>> result = await _movieServices
+                    .GetMoviesByOption(paidMovie: false, pageNumber, pageSize);
+
+                return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiResponse<List<MovieDTO>>.FailureResponse("An error occurred when retrieving free movies")
+                );
+            }
+        }
     }
 }
