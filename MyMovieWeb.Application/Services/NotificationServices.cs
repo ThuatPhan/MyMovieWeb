@@ -37,19 +37,17 @@ namespace MyMovieWeb.Application.Services
         {
             if (!userIds.Any()) return;
 
-            IEnumerable<Task> addTasks = userIds
-                .Select(userId => _notificationRepo
-                    .AddAsync(
-                        new Notification
-                        {
-                            UserId = userId,
-                            Message = message,
-                            Url = url
-                        }
-                    )
+            foreach (string userId in userIds)
+            {
+                await _notificationRepo.AddAsync(
+                    new Notification
+                    {
+                        UserId = userId,
+                        Message = message,
+                        Url = url
+                    }
                 );
-
-            await Task.WhenAll(addTasks);
+            }
         }
 
         public async Task<Result<NotificationDTO>> MarkAsRead(int id)
