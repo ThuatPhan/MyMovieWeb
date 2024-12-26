@@ -73,7 +73,7 @@ namespace MyMovieWeb.Application.Services
                 .Select(fm => fm.UserId)
                 .ToList();
 
-            await _notificationServices.AddNotifications(userIds, $"Phim {movieOfEpisode.Title} đã có tập mới: {episodeDTO.Title}", $"/watch/{movieOfEpisode.Id}");
+            await _notificationServices.AddNotifications(userIds, $"Phim {movieOfEpisode.Title} đã có tập mới: {episodeDTO.Title}", $"/details/{movieOfEpisode.Id}");
 
             return Result<EpisodeDTO>.Success(episodeDTO, "Create episode successfully");
         }
