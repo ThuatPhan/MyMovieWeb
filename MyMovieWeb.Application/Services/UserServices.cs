@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -24,7 +25,8 @@ namespace MyMovieWeb.Application.Services
             IMovieService movieService,
             INotificationServices notificationService,
             IRepository<Order> orderRepository
-        )
+,
+            IMemoryCache memoryCache)
         {
             _mapper = mapper;
             _movieService = movieService;

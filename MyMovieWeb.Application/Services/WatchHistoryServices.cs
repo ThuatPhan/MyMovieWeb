@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
@@ -23,7 +24,8 @@ namespace MyMovieWeb.Application.Services
             IEpisodeServices episodeServices,
             IRepository<WatchHistory> watchHistoryRepository,
             IRepository<Comment> commentRepository
-        )
+,
+            IMemoryCache memoryCache)
         {
             _mapper = mapper;
             _movieServices = movieService;
@@ -250,7 +252,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
             }
 
-            IQueryable<WatchHistory> query = _watchHistoryRepo
+            List<WatchHistory> watchHistories = await _watchHistoryRepo
                 .GetBaseQuery(wh => wh.UserId == userId)
                 .Include(wh => wh.Movie)
                     .ThenInclude(m => m.MovieGenres)
@@ -258,9 +260,7 @@ namespace MyMovieWeb.Application.Services
                 .GroupBy(wh => wh.MovieId)
                 .Select(group => group.OrderByDescending(group => group.LogDate).First())
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            List<WatchHistory> watchHistories = await query
+                .Take(pageSize)
                 .ToListAsync();
 
             List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
@@ -280,7 +280,7 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
             }
 
-            IQueryable<WatchHistory> query = _watchHistoryRepo
+            List<WatchHistory> watchHistories = await _watchHistoryRepo
                 .GetBaseQuery(wh => wh.UserId == userId && !wh.IsWatched)
                 .Include(wh => wh.Movie)
                     .ThenInclude(m => m.MovieGenres)
@@ -288,9 +288,7 @@ namespace MyMovieWeb.Application.Services
                 .GroupBy(wh => wh.MovieId)
                 .Select(group => group.OrderByDescending(group => group.LogDate).First())
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            List<WatchHistory> watchHistories = await query.ToListAsync();
+                .Take(pageSize).ToListAsync();
 
             List<WatchHistoryDTO> watchHistoryDTOs = _mapper.Map<List<WatchHistoryDTO>>(watchHistories);
 
