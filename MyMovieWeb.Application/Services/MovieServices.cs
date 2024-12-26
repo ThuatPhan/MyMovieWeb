@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MyMovieWeb.Application.DTOs.Requests;
 using MyMovieWeb.Application.DTOs.Responses;
 using MyMovieWeb.Application.Interfaces;
@@ -21,6 +22,7 @@ namespace MyMovieWeb.Application.Services
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IEpisodeServices _episodeServices;
         private readonly IS3Services _s3Services;
+        private readonly IMemoryCache _memoryCache;
 
         public MovieServices(
             IMapper mapper,
@@ -32,7 +34,8 @@ namespace MyMovieWeb.Application.Services
             IEpisodeServices episodeServices,
             IS3Services s3Services,
             IRepository<Order> orderRepository
-        )
+,
+            IMemoryCache memoryCache)
         {
             _mapper = mapper;
             _genreRepo = genreRepository;
@@ -43,6 +46,7 @@ namespace MyMovieWeb.Application.Services
             _episodeServices = episodeServices;
             _s3Services = s3Services;
             _orderRepo = orderRepository;
+            _memoryCache = memoryCache;
         }
 
         public async Task<Result<MovieDTO>> CreateMovie(CreateMovieRequestDTO movieRequestDTO)
@@ -176,7 +180,7 @@ namespace MyMovieWeb.Application.Services
                 _watchHistoryRepo.RemoveRangeAsync(wh => wh.MovieId == id),
                 _followedMovieRepo.RemoveRangeAsync(wh => wh.MovieId == id),
                 _orderRepo.RemoveRangeAsync(o => o.MovieId == id)
-            ); 
+            );
 
             await _episodeServices.DeleteEpisodeOfMovie(id);
 
@@ -206,6 +210,11 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<MovieDTO>> GetMovieById(int id)
         {
+            if(_memoryCache.TryGetValue($"Movie_{id}", out MovieDTO? movie))
+            {
+                return Result<MovieDTO>.Success(movie, "Movie retrieved successfully");
+            }
+
             var movieDTO = await _movieRepo
                 .GetBaseQuery(predicate: m => m.Id == id)
                 .Select(m => new MovieDTO
@@ -237,10 +246,12 @@ namespace MyMovieWeb.Application.Services
                 })
                 .FirstOrDefaultAsync();
 
-            if(movieDTO is null)
+            if (movieDTO is null)
             {
                 return Result<MovieDTO>.Failure($"Movie Id {id} not found");
             }
+
+            _memoryCache.Set($"Movie_{id}", movieDTO, TimeSpan.FromMinutes(5));
 
             return Result<MovieDTO>.Success(movieDTO, "Movie retrieved successfully");
         }
@@ -296,6 +307,11 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize)
         {
+            if(_memoryCache.TryGetValue($"SameGenreOf_{movieId}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
+            {
+                return Result<List<MovieDTO>>.Success(movies, "Movies retrieved successfully");
+            }
+
             IQueryable<Movie> query = _movieRepo.GetBaseQuery(predicate: m => m.Id == movieId);
 
             var movieDTO = await query
@@ -372,6 +388,8 @@ namespace MyMovieWeb.Application.Services
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
+            _memoryCache.Set($"SameGenreOf_{movieId}_{pageNumber}_{pageSize}", movieDTOs, TimeSpan.FromMinutes(5));
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
@@ -514,6 +532,11 @@ namespace MyMovieWeb.Application.Services
             startDate = DateTime.Today;
             endDate = DateTime.Today.AddDays(1).AddTicks(-1);
 
+            if(_memoryCache.TryGetValue($"TredingInDay_{startDate}_{endDate}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
+            {
+                return Result<List<MovieDTO>>.Success(movies, "Trending movies retrieved successfully");
+            }
+
             var query = _watchHistoryRepo
                 .GetBaseQuery(wh => wh.LogDate >= startDate && wh.LogDate <= endDate)
                 .GroupBy(wh => wh.MovieId)
@@ -565,6 +588,7 @@ namespace MyMovieWeb.Application.Services
 
             trendingMovieDTOs = trendingMovieDTOs.OrderBy(m => movieIds.IndexOf(m.Id)).ToList();
 
+            _memoryCache.Set($"TredingInDay_{startDate}_{endDate}_{pageNumber}_{pageSize}", trendingMovieDTOs, TimeSpan.FromMinutes(1));
 
             return Result<List<MovieDTO>>.Success(trendingMovieDTOs, "Trending movies retrieved successfully");
         }
@@ -607,6 +631,12 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> GetNewComment(int topCount)
         {
+
+            if(_memoryCache.TryGetValue("NewCommentMovies", out List<MovieDTO>? movies))
+            {
+                return Result<List<MovieDTO>>.Success(movies, "Movies with latest comments retrieved successfully.");
+            }
+
             var latestCommentsQuery = _commentRepo
                 .GetBaseQuery(c => true)
                 .OrderByDescending(c => c.CreatedDate)
@@ -658,6 +688,8 @@ namespace MyMovieWeb.Application.Services
                 .OrderBy(m => movieIds.IndexOf(m.Id))
                 .ToList();
 
+            _memoryCache.Set("NewCommentMovies", sortedMovies, TimeSpan.FromMinutes(1));
+
             return Result<List<MovieDTO>>.Success(sortedMovies, "Movies with latest comments retrieved successfully.");
         }
 
@@ -665,6 +697,11 @@ namespace MyMovieWeb.Application.Services
         {
             try
             {
+                if(_memoryCache.TryGetValue("RecommendedMovies", out List<MovieDTO>? movies))
+                {
+                    return Result<List<MovieDTO>>.Success(movies, "Movies watched after the current movie retrieved successfully.");
+                }
+
                 var userLogDates = await _watchHistoryRepo
                     .GetBaseQuery(wh => wh.MovieId == movieId)
                     .Select(wh => new { wh.UserId, wh.LogDate })
@@ -694,7 +731,7 @@ namespace MyMovieWeb.Application.Services
                     .ToList();
 
                 if (!watchedAfterMovies.Any())
-                {         
+                {
                     return Result<List<MovieDTO>>.Success(new List<MovieDTO>(), "No movies were watched after the current movie.");
                 }
 
@@ -734,6 +771,8 @@ namespace MyMovieWeb.Application.Services
                     .OrderBy(m => movieIds.IndexOf(m.Id))
                     .ToList();
 
+                _memoryCache.Set("RecommendedMovies", sortedMovies, TimeSpan.FromMinutes(1));
+
                 return Result<List<MovieDTO>>.Success(sortedMovies, "Movies watched after the current movie retrieved successfully.");
             }
             catch (Exception ex)
@@ -749,37 +788,44 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> GetMoviesByOption(bool paidMovie, int pageNumber, int pageSize)
         {
+            if (_memoryCache.TryGetValue(paidMovie ? "PaidMovies" : "FreeMovies", out List<MovieDTO>? movies))
+            {
+                return Result<List<MovieDTO>>.Success(movies, "Movies retrieved successfully");
+            }
+
             var movieDTOs = await _movieRepo
-                .GetBaseQuery(m => m.IsPaid == paidMovie && m.IsShow)
-                .OrderBy(m => m.Title)
-                .Select(m => new MovieDTO
+            .GetBaseQuery(m => m.IsPaid == paidMovie && m.IsShow)
+            .OrderBy(m => m.Title)
+            .Select(m => new MovieDTO
+            {
+                Id = m.Id,
+                Title = m.Title,
+                IsPaid = m.IsPaid,
+                Price = m.Price,
+                Description = m.Description,
+                Director = m.Director,
+                Actors = SplitActors(m.Actors),
+                PosterUrl = m.PosterUrl,
+                BannerUrl = m.BannerUrl,
+                IsSeries = m.IsSeries,
+                IsSeriesCompleted = m.IsSeriesCompleted,
+                VideoUrl = m.VideoUrl,
+                View = m.View,
+                RateCount = m.RateCount,
+                RateTotal = m.RateTotal,
+                IsShow = m.IsShow,
+                ReleaseDate = m.ReleaseDate,
+                Episodes = m.Episodes.Select(e => _mapper.Map<EpisodeDTO>(e)).ToList(),
+                Genres = m.MovieGenres.Where(mg => mg.Genre.IsShow).Select(mg => new MovieGenreDTO
                 {
-                    Id = m.Id,
-                    Title = m.Title,
-                    IsPaid = m.IsPaid,
-                    Price = m.Price,
-                    Description = m.Description,
-                    Director = m.Director,
-                    Actors = SplitActors(m.Actors),
-                    PosterUrl = m.PosterUrl,
-                    BannerUrl = m.BannerUrl,
-                    IsSeries = m.IsSeries,
-                    IsSeriesCompleted = m.IsSeriesCompleted,
-                    VideoUrl = m.VideoUrl,
-                    View = m.View,
-                    RateCount = m.RateCount,
-                    RateTotal = m.RateTotal,
-                    IsShow = m.IsShow,
-                    ReleaseDate = m.ReleaseDate,
-                    Episodes = m.Episodes.Select(e => _mapper.Map<EpisodeDTO>(e)).ToList(),
-                    Genres = m.MovieGenres.Where(mg => mg.Genre.IsShow).Select(mg => new MovieGenreDTO
-                    {
-                        GenreId = mg.GenreId,
-                        GenreName = mg.Genre.Name,
-                    }).ToList(),
-                    CommentCount = m.Comments.Count,
-                })
-                .ToListAsync();
+                    GenreId = mg.GenreId,
+                    GenreName = mg.Genre.Name,
+                }).ToList(),
+                CommentCount = m.Comments.Count,
+            })
+            .ToListAsync();
+
+            _memoryCache.Set(paidMovie ? "PaidMovies" : "FreeMovies", movieDTOs, TimeSpan.FromMinutes(5));
 
             return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrieved successfully");
         }
