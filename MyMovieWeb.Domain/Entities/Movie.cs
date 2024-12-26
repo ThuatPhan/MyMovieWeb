@@ -24,5 +24,6 @@
         );
         public ICollection<Episode> Episodes { get; set; }
         public ICollection<MovieGenre> MovieGenres { get; set; } = new List<MovieGenre>();
+        public ICollection<Comment> Comments { get; set; } 
     }
 }

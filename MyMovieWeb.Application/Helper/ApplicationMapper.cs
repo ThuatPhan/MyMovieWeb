@@ -13,6 +13,9 @@ namespace MyMovieWeb.Application.Helper
             CreateMap<GenreRequestDTO, Genre>();
             CreateMap<Genre, GenreDTO>();
 
+            CreateMap<MovieGenre, MovieGenreDTO>()
+                .ForMember(dest => dest.GenreName, opt => opt.MapFrom(src => src.Genre.Name));
+
             //Tag
             CreateMap<TagRequestDTO, Tag>();
             CreateMap<Tag, TagDTO>();
