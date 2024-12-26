@@ -17,21 +17,23 @@ namespace MyMovieWeb.Application.Services
         private readonly IEpisodeServices _episodeServices;
         private readonly IRepository<WatchHistory> _watchHistoryRepo;
         private readonly IRepository<Comment> _commentRepo;
+        private readonly IMemoryCache _memoryCache;
 
         public WatchHistoryServices(
             IMapper mapper,
             IMovieService movieService,
             IEpisodeServices episodeServices,
             IRepository<WatchHistory> watchHistoryRepository,
-            IRepository<Comment> commentRepository
-,
-            IMemoryCache memoryCache)
+            IRepository<Comment> commentRepository,
+            IMemoryCache memoryCache
+        )
         {
             _mapper = mapper;
             _movieServices = movieService;
             _episodeServices = episodeServices;
             _watchHistoryRepo = watchHistoryRepository;
             _commentRepo = commentRepository;
+            _memoryCache = memoryCache;
         }
 
         public async Task<Result<WatchHistoryDTO>> CreateWatchMovieLog(WatchMovieRequestDTO watchMovieRequest, string userId)
@@ -280,6 +282,11 @@ namespace MyMovieWeb.Application.Services
                 return Result<List<WatchHistoryDTO>>.Failure("User id cannot be empty");
             }
 
+            if(_memoryCache.TryGetValue($"Watching_{userId}_{pageNumber}_{pageSize}", out List<WatchHistoryDTO>? watching))
+            {
+                return Result<List<WatchHistoryDTO>>.Success(watching, "Watch histories retrieved successfully");
+            }
+
             List<WatchHistory> watchHistories = await _watchHistoryRepo
                 .GetBaseQuery(wh => wh.UserId == userId && !wh.IsWatched)
                 .Include(wh => wh.Movie)
@@ -296,6 +303,8 @@ namespace MyMovieWeb.Application.Services
             {
                 watchHistoryDTO.Movie.CommentCount = await _commentRepo.CountAsync(c => c.MovieId == watchHistoryDTO.Movie.Id);
             }
+
+            _memoryCache.Set($"Watching_{userId}_{pageNumber}_{pageSize}", watchHistoryDTOs, TimeSpan.FromSeconds(30));
 
             return Result<List<WatchHistoryDTO>>.Success(watchHistoryDTOs, "Watch histories retrieved successfully");
         }
