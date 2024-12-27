@@ -424,32 +424,42 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> GetTopView(TimePeriod timePeriod, int topCount)
         {
+            // Lấy múi giờ SE Asia Standard Time
+            var seAsiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            // Khai báo thời gian
             DateTime startDate, endDate;
+
+            // Lấy thời gian hiện tại theo múi giờ SE Asia
+            DateTime currentDateInSEAsia = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, seAsiaTimeZone);
+
+            // Tính toán thời gian dựa trên TimePeriod
             switch (timePeriod)
             {
                 case TimePeriod.Today:
-                    startDate = DateTime.Today;
-                    endDate = DateTime.Today.AddDays(1).AddTicks(-1);
+                    startDate = currentDateInSEAsia.Date;
+                    endDate = startDate.AddDays(1).AddTicks(-1);
                     break;
 
                 case TimePeriod.ThisWeek:
-                    startDate = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                    startDate = currentDateInSEAsia.Date.AddDays(-(int)currentDateInSEAsia.DayOfWeek);
                     endDate = startDate.AddDays(7).AddTicks(-1);
                     break;
 
                 case TimePeriod.ThisMonth:
-                    startDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                    startDate = new DateTime(currentDateInSEAsia.Year, currentDateInSEAsia.Month, 1);
                     endDate = startDate.AddMonths(1).AddTicks(-1);
                     break;
 
                 case TimePeriod.ThisYear:
-                    startDate = new DateTime(DateTime.Today.Year, 1, 1);
+                    startDate = new DateTime(currentDateInSEAsia.Year, 1, 1);
                     endDate = startDate.AddYears(1).AddTicks(-1);
                     break;
 
                 default:
                     throw new NotSupportedException("Unsupported TimePeriod");
             }
+
 
             var query = _watchHistoryRepo
                 .GetBaseQuery(wh => wh.LogDate >= startDate && wh.LogDate <= endDate)
