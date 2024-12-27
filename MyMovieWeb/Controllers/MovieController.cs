@@ -201,14 +201,7 @@ namespace MyMovieWeb.Presentation.Controllers
         {
             try
             {
-                Result<List<MovieDTO>> result = await _movieServices
-                    .FindAllMovies(
-                        pageNumber,
-                        pageSize,
-                        m => m.IsShow && m.MovieGenres.Any(mg => mg.GenreId == genreId),
-                        m => m.OrderBy(m => m.Title)
-                    );
-
+                Result<List<MovieDTO>> result = await _movieServices.GetMoviesByGenreId(genreId, pageNumber, pageSize);
                 return Ok(ApiResponse<List<MovieDTO>>.SuccessResponse(result.Data, result.Message));
             }
             catch (Exception ex)

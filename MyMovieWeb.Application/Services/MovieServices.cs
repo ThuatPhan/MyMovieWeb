@@ -8,6 +8,7 @@ using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
 using System.Linq.Expressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace MyMovieWeb.Application.Services
 {
@@ -210,7 +211,7 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<MovieDTO>> GetMovieById(int id)
         {
-            if(_memoryCache.TryGetValue($"Movie_{id}", out MovieDTO? movie))
+            if (_memoryCache.TryGetValue($"Movie_{id}", out MovieDTO? movie))
             {
                 return Result<MovieDTO>.Success(movie, "Movie retrieved successfully");
             }
@@ -307,7 +308,7 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> GetMoviesSameGenreOfMovie(int movieId, int pageNumber, int pageSize)
         {
-            if(_memoryCache.TryGetValue($"SameGenreOf_{movieId}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
+            if (_memoryCache.TryGetValue($"SameGenreOf_{movieId}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
             {
                 return Result<List<MovieDTO>>.Success(movies, "Movies retrieved successfully");
             }
@@ -532,7 +533,7 @@ namespace MyMovieWeb.Application.Services
             startDate = DateTime.Today;
             endDate = DateTime.Today.AddDays(1).AddTicks(-1);
 
-            if(_memoryCache.TryGetValue($"TredingInDay_{startDate}_{endDate}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
+            if (_memoryCache.TryGetValue($"TredingInDay_{startDate}_{endDate}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
             {
                 return Result<List<MovieDTO>>.Success(movies, "Trending movies retrieved successfully");
             }
@@ -632,7 +633,7 @@ namespace MyMovieWeb.Application.Services
         public async Task<Result<List<MovieDTO>>> GetNewComment(int topCount)
         {
 
-            if(_memoryCache.TryGetValue("NewCommentMovies", out List<MovieDTO>? movies))
+            if (_memoryCache.TryGetValue("NewCommentMovies", out List<MovieDTO>? movies))
             {
                 return Result<List<MovieDTO>>.Success(movies, "Movies with latest comments retrieved successfully.");
             }
@@ -697,7 +698,7 @@ namespace MyMovieWeb.Application.Services
         {
             try
             {
-                if(_memoryCache.TryGetValue("RecommendedMovies", out List<MovieDTO>? movies))
+                if (_memoryCache.TryGetValue("RecommendedMovies", out List<MovieDTO>? movies))
                 {
                     return Result<List<MovieDTO>>.Success(movies, "Movies watched after the current movie retrieved successfully.");
                 }
@@ -779,6 +780,53 @@ namespace MyMovieWeb.Application.Services
             {
                 return Result<List<MovieDTO>>.Failure($"An error occurred while retrieving movies: {ex.Message}");
             }
+        }
+
+        public async Task<Result<List<MovieDTO>>> GetMoviesByGenreId(int genreId, int pageNumber, int pageSize)
+        {
+            
+            if (_memoryCache.TryGetValue($"MovieByGenre_{genreId}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
+            {
+                return Result<List<MovieDTO>>.Success(movies, "Movies retrived successfully");
+            }
+
+            var movieDTOs = await _movieRepo
+                .GetBaseQuery(m => m.MovieGenres.Any(mg => mg.GenreId == genreId))
+                .Select(m => new MovieDTO
+                {
+                    Id = m.Id,
+                    Title = m.Title,
+                    IsPaid = m.IsPaid,
+                    Price = m.Price,
+                    Description = m.Description,
+                    Director = m.Director,
+                    Actors = SplitActors(m.Actors),
+                    PosterUrl = m.PosterUrl,
+                    BannerUrl = m.BannerUrl,
+                    IsSeries = m.IsSeries,
+                    IsSeriesCompleted = m.IsSeriesCompleted,
+                    VideoUrl = m.VideoUrl,
+                    View = m.View,
+                    RateCount = m.RateCount,
+                    RateTotal = m.RateTotal,
+                    IsShow = m.IsShow,
+                    ReleaseDate = m.ReleaseDate,
+                    Episodes = m.Episodes.Select(e => _mapper.Map<EpisodeDTO>(e)).ToList(),
+                    Genres = m.MovieGenres.Where(mg => mg.Genre.IsShow).Select(mg => new MovieGenreDTO
+                    {
+                        GenreId = mg.GenreId,
+                        GenreName = mg.Genre.Name,
+                    }).ToList(),
+                    CommentCount = m.Comments.Count,
+                })
+                .OrderBy(m => m.Title)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            _memoryCache.Set($"MovieByGenre_{genreId}_{pageNumber}_{pageSize}", movieDTOs, TimeSpan.FromMinutes(3));
+
+            return Result<List<MovieDTO>>.Success(movieDTOs, "Movies retrived successfully");
         }
 
         private static List<string> SplitActors(string actors)
