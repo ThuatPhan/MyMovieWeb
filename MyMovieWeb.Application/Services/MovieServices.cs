@@ -8,7 +8,6 @@ using MyMovieWeb.Application.Utils;
 using MyMovieWeb.Domain.Entities;
 using MyMovieWeb.Domain.Interfaces;
 using System.Linq.Expressions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace MyMovieWeb.Application.Services
 {
@@ -529,9 +528,13 @@ namespace MyMovieWeb.Application.Services
 
         public async Task<Result<List<MovieDTO>>> GetTrendingInDay(int pageNumber, int pageSize)
         {
-            DateTime startDate, endDate;
-            startDate = DateTime.Today;
-            endDate = DateTime.Today.AddDays(1).AddTicks(-1);
+            // Lấy múi giờ SE Asia Standard Time
+            var seAsiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            // Chuyển đổi thời gian UTC sang múi giờ SE Asia
+            DateTime todayInSEAsia = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, seAsiaTimeZone);
+            DateTime startDate = todayInSEAsia.Date;
+            DateTime endDate = startDate.AddDays(1).AddTicks(-1);
 
             if (_memoryCache.TryGetValue($"TredingInDay_{startDate}_{endDate}_{pageNumber}_{pageSize}", out List<MovieDTO>? movies))
             {
